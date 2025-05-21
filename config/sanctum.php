@@ -2,6 +2,9 @@
 
 use Laravel\Sanctum\Sanctum;
 
+// Use custom PersonalAccessToken model
+Sanctum::usePersonalAccessTokenModel(\App\Models\Sanctum\PersonalAccessToken::class);
+
 return [
 
     /*
