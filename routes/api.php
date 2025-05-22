@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\PasswordResetController;
+use App\Modules\User\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,3 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('me', [AuthController::class, 'me'])->name('me');
 });
+Route::middleware('auth:sanctum')->group(function () {
+      // User routes
+    Route::prefix('user')->name('user.')->group(function () {
+        Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    });
+    });
