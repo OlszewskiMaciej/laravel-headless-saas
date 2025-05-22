@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Modules\Auth\Resources;
+namespace App\Modules\Admin\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserResource extends JsonResource
+class RoleResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,12 +17,12 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
-            'email_verified_at' => $this->email_verified_at,
+            'guard_name' => $this->guard_name,
+            'permissions' => $this->whenLoaded('permissions', function () {
+                return $this->permissions->pluck('name');
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'roles' => $this->roles->pluck('name'),
-            'permissions' => $this->getAllPermissions()->pluck('name'),
         ];
     }
 }

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\PasswordResetController;
 use App\Modules\User\Controllers\ProfileController;
+use App\Modules\Admin\Controllers\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,5 +45,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('user')->name('user.')->group(function () {
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    });
+      // Admin routes
+
+    Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
+        // Roles and permissions routes
+        Route::apiResource('roles', RoleController::class)->middleware('permission:view roles,create roles,update roles,delete roles');
     });
     });
