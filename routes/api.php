@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('cancel', [SubscriptionController::class, 'cancel'])->name('cancel')->middleware('permission:cancel subscription');
         Route::post('resume', [SubscriptionController::class, 'resume'])->name('resume')->middleware('permission:resume subscription');
         Route::post('start-trial', [SubscriptionController::class, 'startTrial'])->name('start-trial')->middleware('permission:start trial');
+        Route::post('payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('update-payment-method');
     });
       // User routes
     Route::prefix('user')->name('user.')->group(function () {

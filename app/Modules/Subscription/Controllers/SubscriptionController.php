@@ -5,6 +5,8 @@ namespace App\Modules\Subscription\Controllers;
 use App\Modules\Auth\Resources\UserResource;
 use App\Modules\Core\Traits\ApiResponse;
 use App\Modules\Subscription\Requests\SubscribeRequest;
+use App\Modules\Subscription\Requests\UpdatePaymentMethodRequest;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -206,5 +208,34 @@ class SubscriptionController
             new UserResource($user), 
             "Your {$trialDays}-day trial has started"
         );
+    }
+    
+    /**
+     * Update payment method
+     */
+    public function updatePaymentMethod(UpdatePaymentMethodRequest $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            // Update the customer's default payment method
+            $user->updateDefaultPaymentMethod($request->payment_method);
+            
+            // Sync payment method data to user
+            $user->updateDefaultPaymentMethodFromStripe();
+            
+            // Log activity
+            activity()
+                ->causedBy($user)
+                ->log('updated payment method');
+            
+            return $this->success(
+                new UserResource($user->fresh()), 
+                'Payment method updated successfully'
+            );
+        } catch (\Exception $e) {
+            Log::error('Payment method update error: ' . $e->getMessage());
+            return $this->error('Failed to update payment method: ' . $e->getMessage(), 500);
+        }
     }
 }
