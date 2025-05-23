@@ -5,6 +5,7 @@ use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\PasswordResetController;
 use App\Modules\User\Controllers\ProfileController;
 use App\Modules\Admin\Controllers\RoleController;
+use App\Modules\Admin\Controllers\ActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,5 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         // Roles and permissions routes
         Route::apiResource('roles', RoleController::class)->middleware('permission:view roles,create roles,update roles,delete roles');
+        
+        // Activity logs
+        Route::get('logs', [ActivityLogController::class, 'index'])->name('logs.index')->middleware('permission:view activity logs');
     });
     });
