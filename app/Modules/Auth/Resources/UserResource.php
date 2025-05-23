@@ -23,6 +23,18 @@ class UserResource extends JsonResource
             'updated_at' => $this->updated_at,
             'roles' => $this->roles->pluck('name'),
             'permissions' => $this->getAllPermissions()->pluck('name'),
+            'subscription' => $this->whenLoaded('subscription', function () {
+                if ($this->subscription()) {
+                    return [
+                        'name' => $this->subscription()->name,
+                        'status' => $this->subscription()->stripe_status,
+                        'ends_at' => $this->subscription()->ends_at,
+                    ];
+                }
+                return null;
+            }),
+            'on_trial' => $this->onTrial(),
+            'trial_ends_at' => $this->trial_ends_at,
         ];
     }
 }

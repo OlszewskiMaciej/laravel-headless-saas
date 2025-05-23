@@ -47,6 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', [AuthController::class, 'me'])->name('me');
 });
 Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('subscription')->name('subscription.')->group(function () {
+        Route::post('/', [SubscriptionController::class, 'subscribe'])->name('subscribe')->middleware('permission:subscribe to plan');
+        Route::get('/', [SubscriptionController::class, 'show'])->name('show');
+        Route::post('cancel', [SubscriptionController::class, 'cancel'])->name('cancel')->middleware('permission:cancel subscription');
+        Route::post('resume', [SubscriptionController::class, 'resume'])->name('resume')->middleware('permission:resume subscription');
+    });
       // User routes
     Route::prefix('user')->name('user.')->group(function () {
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
