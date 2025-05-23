@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\PasswordResetController;
+use App\Modules\Subscription\Controllers\WebhookController;
 use App\Modules\User\Controllers\ProfileController;
 use App\Modules\Admin\Controllers\UserController;
 use App\Modules\Admin\Controllers\RoleController;
@@ -30,6 +31,9 @@ Route::get('/', function () {
         ]
     ]);
 });
+
+// Stripe webhook route (webhook secret secured instead of API key)
+Route::post('stripe/webhook', [WebhookController::class, 'handleWebhook']);
 
 // Public auth routes (require API key but no user auth)
 Route::post('register', [AuthController::class, 'register'])->name('register');
