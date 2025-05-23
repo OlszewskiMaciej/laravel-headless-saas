@@ -164,4 +164,47 @@ class SubscriptionController
         
         return $this->success(null, 'Subscription has been resumed');
     }
+    
+    /**
+     * Start free trial
+     */    
+    public function startTrial(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        
+        if (!$user->can('start trial')) {
+            return $this->error('Unauthorized to start trial', 403);
+        }
+        
+        if ($user->onTrial() || $user->trial_ends_at !== null) {
+            return $this->error('You have already used your trial period', 400);
+        }
+        
+        // Check if user already has an active premium subscription
+        if ($user->subscribed()) {
+            return $this->error('You already have a premium subscription, no need for a trial', 400);
+        }
+        
+        $trialDays = config('subscription.trial_days', 30);
+        $user->trial_ends_at = Carbon::now()->addDays($trialDays);
+        $user->save();
+        
+        // Assign trial role, preserving admin role if user has it
+        if ($user->hasRole('admin')) {
+            $user->syncRoles(['admin', 'trial']);
+        } else {
+            $user->syncRoles(['trial']);
+        }
+        
+        // Log activity
+        activity()
+            ->causedBy($user)
+            ->withProperties(['days' => $trialDays])
+            ->log('started trial');
+        
+        return $this->success(
+            new UserResource($user), 
+            "Your {$trialDays}-day trial has started"
+        );
+    }
 }

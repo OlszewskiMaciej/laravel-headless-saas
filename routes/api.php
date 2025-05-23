@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\PasswordResetController;
+use App\Modules\Subscription\Controllers\SubscriptionController;
 use App\Modules\Subscription\Controllers\WebhookController;
 use App\Modules\User\Controllers\ProfileController;
 use App\Modules\Admin\Controllers\UserController;
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [SubscriptionController::class, 'show'])->name('show');
         Route::post('cancel', [SubscriptionController::class, 'cancel'])->name('cancel')->middleware('permission:cancel subscription');
         Route::post('resume', [SubscriptionController::class, 'resume'])->name('resume')->middleware('permission:resume subscription');
+        Route::post('start-trial', [SubscriptionController::class, 'startTrial'])->name('start-trial')->middleware('permission:start trial');
     });
       // User routes
     Route::prefix('user')->name('user.')->group(function () {
