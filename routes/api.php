@@ -50,6 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
       // Admin routes
 
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
+        Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:view users');
+        Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:create users');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show')->middleware('permission:show users');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:update users');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('permission:delete users');
+        
         // Roles and permissions routes
         Route::apiResource('roles', RoleController::class)->middleware('permission:view roles,create roles,update roles,delete roles');
         
