@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Auth\Controllers\PasswordResetController;
 use App\Modules\User\Controllers\ProfileController;
+use App\Modules\Admin\Controllers\UserController;
 use App\Modules\Admin\Controllers\RoleController;
 use App\Modules\Admin\Controllers\ActivityLogController;
 
