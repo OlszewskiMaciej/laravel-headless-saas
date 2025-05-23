@@ -4,13 +4,18 @@ namespace App\Modules\Subscription\Controllers;
 
 use App\Modules\Auth\Resources\UserResource;
 use App\Modules\Core\Traits\ApiResponse;
+use App\Modules\Subscription\Requests\GetInvoiceRequest;
+use App\Modules\Subscription\Requests\ListInvoicesRequest;
 use App\Modules\Subscription\Requests\SubscribeRequest;
 use App\Modules\Subscription\Requests\UpdatePaymentMethodRequest;
+use App\Modules\Subscription\Resources\InvoiceCollection;
+use App\Modules\Subscription\Resources\InvoiceResource;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Exceptions\IncompletePayment;
+use Symfony\Component\HttpFoundation\Response;
 
 class SubscriptionController
 {
@@ -236,6 +241,76 @@ class SubscriptionController
         } catch (\Exception $e) {
             Log::error('Payment method update error: ' . $e->getMessage());
             return $this->error('Failed to update payment method: ' . $e->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * Get invoice for a payment
+     */
+    public function getInvoice(GetInvoiceRequest $request): Response
+    {
+        if (!$request->user()->can('get invoice')) {
+            return $this->error('Unauthorized to view invoices', 403);
+        }
+
+        try {
+            $user = $request->user();
+            $invoiceId = $request->invoice_id;
+            
+            // Find the invoice by ID
+            $invoice = $user->findInvoice($invoiceId);
+            
+            if (!$invoice) {
+                return $this->error('Invoice not found', 404);
+            }
+            
+            // Log activity
+            activity()
+                ->causedBy($user)
+                ->withProperties(['invoice_id' => $invoiceId])
+                ->log('downloaded invoice');
+            
+            // Return the PDF invoice
+            return $invoice->download();
+        } catch (\Exception $e) {
+            Log::error('Invoice download error: ' . $e->getMessage());
+            return $this->error('Failed to download invoice: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * List all invoices for the user
+     */
+    public function listInvoices(ListInvoicesRequest $request): JsonResponse
+    {
+        if (!$request->user()->can('get invoice')) {
+            return $this->error('Unauthorized to view invoices', 403);
+        }
+
+        try {
+            $user = $request->user();
+            // Ensure the user has a Stripe customer ID
+            if (!$user->stripe_id) {
+                return $this->success(['invoices' => []], 'No invoices found');
+            }
+            
+            // Get invoices from Stripe
+            $invoices = $user->invoices();
+            
+            // Log activity
+            activity()
+                ->causedBy($user)
+                ->log('viewed invoices');
+            
+            // Return formatted invoices using the resource collection
+            return $this->success(new InvoiceCollection(
+                collect($invoices)->map(function($invoice) {
+                    return new InvoiceResource($invoice);
+                })
+            ));
+        } catch (\Exception $e) {
+            Log::error('List invoices error: ' . $e->getMessage());
+            return $this->error('Failed to retrieve invoices: ' . $e->getMessage(), 500);
         }
     }
 }

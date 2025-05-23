@@ -55,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('resume', [SubscriptionController::class, 'resume'])->name('resume')->middleware('permission:resume subscription');
         Route::post('start-trial', [SubscriptionController::class, 'startTrial'])->name('start-trial')->middleware('permission:start trial');
         Route::post('payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('update-payment-method');
+        Route::get('invoice', [SubscriptionController::class, 'getInvoice'])->name('get-invoice')->middleware('permission:get invoice');
+        Route::get('invoices', [SubscriptionController::class, 'listInvoices'])->name('list-invoices')->middleware('permission:get invoice');
     });
       // User routes
     Route::prefix('user')->name('user.')->group(function () {
