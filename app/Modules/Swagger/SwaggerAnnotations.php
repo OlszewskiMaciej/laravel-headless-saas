@@ -30,6 +30,22 @@ use OpenApi\Annotations as OA;
  *     bearerFormat="JWT"
  * )
  * 
+ * @OA\SecurityScheme(
+ *     securityScheme="apiKeyHeader",
+ *     type="apiKey",
+ *     name="X-API-KEY",
+ *     in="header",
+ *     description="API key authentication via header"
+ * )
+ * 
+ * @OA\SecurityScheme(
+ *     securityScheme="apiKeyQuery",
+ *     type="apiKey",
+ *     name="api_key",
+ *     in="query",
+ *     description="API key authentication via query parameter"
+ * )
+ * 
  * @OA\Tag(
  *     name="Auth",
  *     description="Authentication endpoints"
@@ -48,6 +64,21 @@ use OpenApi\Annotations as OA;
  * @OA\Tag(
  *     name="Admin",
  *     description="Admin only endpoints"
+ * )
+ * 
+ * @OA\Tag(
+ *     name="API Keys",
+ *     description="API key management endpoints"
+ * )
+ * 
+ * @OA\Tag(
+ *     name="Roles",
+ *     description="Role management endpoints"
+ * )
+ * 
+ * @OA\Tag(
+ *     name="Permissions",
+ *     description="Permission management endpoints"
  * )
  */
 class SwaggerAnnotations
