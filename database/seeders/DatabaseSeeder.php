@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('admin123'),
         ]);
         $admin->assignRole('admin');
-
+        
         // Create test user
         $user = User::factory()->create([
             'name' => 'Test User',
@@ -31,5 +31,8 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password123'),
         ]);
         $user->assignRole('free');
+        
+        // Create default API keys for testing
+        $this->call(DefaultApiKeySeeder::class);
     }
 }
