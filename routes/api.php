@@ -23,7 +23,7 @@ use App\Modules\Admin\Controllers\ApiKeyController;
 */
 
 // Basic API health route
-Route::get('/', function () {
+Route::get('/test', function () {
     return response()->json([
         'status' => 'success',
         'message' => 'API is working',
