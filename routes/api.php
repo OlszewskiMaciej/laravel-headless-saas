@@ -9,6 +9,7 @@ use App\Modules\User\Controllers\ProfileController;
 use App\Modules\Admin\Controllers\UserController;
 use App\Modules\Admin\Controllers\RoleController;
 use App\Modules\Admin\Controllers\ActivityLogController;
+use App\Modules\Admin\Controllers\ApiKeyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,18 +37,23 @@ Route::get('/', function () {
 // Stripe webhook route (webhook secret secured instead of API key)
 Route::post('stripe/webhook', [WebhookController::class, 'handleWebhook']);
 
-// Public auth routes (require API key but no user auth)
-Route::post('register', [AuthController::class, 'register'])->name('register');
-Route::post('login', [AuthController::class, 'login'])->name('login');
-Route::post('forgot-password', [PasswordResetController::class, 'forgotPassword'])->name('forgot-password');
-Route::post('reset-password', [PasswordResetController::class, 'resetPassword'])->name('reset-password');
+// Auth routes are protected with API key middleware
+Route::middleware('api-key')->prefix('auth')->name('auth.')->group(function () {
+    // Public auth routes (require API key but no user auth)
+    Route::post('register', [AuthController::class, 'register'])->name('register');
+    Route::post('login', [AuthController::class, 'login'])->name('login');
+    Route::post('forgot-password', [PasswordResetController::class, 'forgotPassword'])->name('forgot-password');
+    Route::post('reset-password', [PasswordResetController::class, 'resetPassword'])->name('reset-password');
     
-// Protected auth routes (require both API key and user auth)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('me', [AuthController::class, 'me'])->name('me');
+    // Protected auth routes (require both API key and user auth)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('me', [AuthController::class, 'me'])->name('me');
+    });
 });
-Route::middleware('auth:sanctum')->group(function () {
+
+// Protected routes with both API key and user authentication
+Route::middleware(['api-key', 'auth:sanctum'])->group(function () {
     Route::prefix('subscription')->name('subscription.')->group(function () {
         Route::post('/', [SubscriptionController::class, 'subscribe'])->name('subscribe')->middleware('permission:subscribe to plan');
         Route::get('/', [SubscriptionController::class, 'show'])->name('show');
@@ -77,5 +83,15 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Activity logs
         Route::get('logs', [ActivityLogController::class, 'index'])->name('logs.index')->middleware('permission:view activity logs');
+        
+        // API Key Management
+        Route::prefix('api-keys')->name('api-keys.')->middleware('permission:manage api keys')->group(function () {
+            Route::get('/', [ApiKeyController::class, 'index'])->name('index');
+            Route::post('/', [ApiKeyController::class, 'store'])->name('store');
+            Route::get('/{apiKey}', [ApiKeyController::class, 'show'])->name('show');
+            Route::put('/{apiKey}', [ApiKeyController::class, 'update'])->name('update');
+            Route::post('/{apiKey}/revoke', [ApiKeyController::class, 'revoke'])->name('revoke');
+            Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->name('destroy');
+        });
     });
-    });
+});
