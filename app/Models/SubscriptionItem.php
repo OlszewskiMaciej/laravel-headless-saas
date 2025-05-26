@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Traits\HasUuid;
+use App\Core\Traits\HasUuid;
 use Laravel\Cashier\SubscriptionItem as CashierSubscriptionItem;
 
 class SubscriptionItem extends CashierSubscriptionItem
