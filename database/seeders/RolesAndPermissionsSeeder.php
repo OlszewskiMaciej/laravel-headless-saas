@@ -33,12 +33,15 @@ class RolesAndPermissionsSeeder extends Seeder
             // Admin permissions
             'view users',
             'create users',
+            'show users',
             'update users',
             'delete users',
+
             'view roles',
             'create roles',
             'update roles',
             'delete roles',
+            
             'view activity logs',
 
             // API key permissions

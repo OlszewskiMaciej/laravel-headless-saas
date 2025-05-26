@@ -79,7 +79,14 @@ Route::middleware(['api-key', 'auth:sanctum'])->group(function () {
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('permission:delete users');
         
         // Roles and permissions routes
-        Route::apiResource('roles', RoleController::class)->middleware('permission:view roles,create roles,update roles,delete roles');
+        Route::apiResource('roles', RoleController::class)
+            ->middleware([
+                'index' => 'permission:view roles',
+                'store' => 'permission:create roles',
+                'show' => 'permission:view roles',
+                'update' => 'permission:update roles',
+                'destroy' => 'permission:delete roles'
+            ]);
         
         // Activity logs
         Route::get('logs', [ActivityLogController::class, 'index'])->name('logs.index')->middleware('permission:view activity logs');
