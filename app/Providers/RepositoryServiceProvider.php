@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Modules\Admin\Repositories\Interfaces\ActivityLogRepositoryInterface;
 use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
+use App\Modules\Subscription\Repositories\Interfaces\SubscriptionRepositoryInterface;
 use App\Modules\Admin\Repositories\ActivityLogRepository;
 use App\Modules\Admin\Repositories\ApiKeyRepository;
+use App\Modules\Subscription\Repositories\SubscriptionRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -25,6 +27,12 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             ActivityLogRepositoryInterface::class,
             ActivityLogRepository::class
+        );
+
+        // Bind Subscription Repository
+        $this->app->bind(
+            SubscriptionRepositoryInterface::class,
+            SubscriptionRepository::class
         );
     }
 

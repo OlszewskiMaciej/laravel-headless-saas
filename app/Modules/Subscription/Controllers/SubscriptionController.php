@@ -3,23 +3,28 @@
 namespace App\Modules\Subscription\Controllers;
 
 use App\Modules\Auth\Resources\UserResource;
-use App\Modules\Core\Traits\ApiResponse;
+use App\Core\Traits\ApiResponse;
 use App\Modules\Subscription\Requests\GetInvoiceRequest;
 use App\Modules\Subscription\Requests\ListInvoicesRequest;
 use App\Modules\Subscription\Requests\SubscribeRequest;
 use App\Modules\Subscription\Requests\UpdatePaymentMethodRequest;
 use App\Modules\Subscription\Resources\InvoiceCollection;
 use App\Modules\Subscription\Resources\InvoiceResource;
-use Carbon\Carbon;
+use App\Modules\Subscription\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Symfony\Component\HttpFoundation\Response;
 
-class SubscriptionController
+class SubscriptionController extends Controller
 {
     use ApiResponse;
+    
+    public function __construct(
+        private readonly SubscriptionService $subscriptionService
+    ) {}
 
     /**
      * Subscribe to a plan
@@ -31,58 +36,13 @@ class SubscriptionController
         }
 
         try {
-            $user = $request->user();
-            
-            // Get plan details from config
-            $plans = config('subscription.plans');
-            if (!isset($plans[$request->plan])) {
-                return $this->error('Invalid subscription plan', 422);
-            }
-            
-            $plan = $plans[$request->plan];
-            
-            // If user already has a subscription, swap it
-            if ($user->subscribed()) {
-                $user->subscription()->swap($plan['stripe_id']);
-                
-                // Preserve admin role if user has it
-                if ($user->hasRole('admin')) {
-                    $user->syncRoles(['admin', 'premium']);
-                } else {
-                    $user->syncRoles(['premium']);
-                }
-                
-                // Log activity
-                activity()
-                    ->causedBy($user)
-                    ->withProperties(['plan' => $plan['name']])
-                    ->log('changed subscription plan');
-                
-                return $this->success(
-                    new UserResource($user->fresh('subscriptions')), 
-                    'Subscription plan changed successfully'
-                );
-            }
-            
-            // Create new subscription
-            $subscription = $user->newSubscription('default', $plan['stripe_id'])
-                ->create($request->payment_method);
-            
-            // Update user's role to premium, preserving admin if they have it
-            if ($user->hasRole('admin')) {
-                $user->syncRoles(['admin', 'premium']);
-            } else {
-                $user->syncRoles(['premium']);
-            }
-            
-            // Log activity
-            activity()
-                ->causedBy($user)
-                ->withProperties(['plan' => $plan['name']])
-                ->log('subscribed to plan');
+            $result = $this->subscriptionService->subscribe(
+                $request->user(),
+                $request->validated()
+            );
             
             return $this->success(
-                new UserResource($user->fresh('subscriptions')), 
+                new UserResource($result['user']), 
                 'Subscription created successfully'
             );
         } catch (IncompletePayment $exception) {
@@ -91,9 +51,15 @@ class SubscriptionController
                 402, 
                 ['payment_intent' => $exception->payment->id]
             );
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
         } catch (\Exception $e) {
-            Log::error('Subscription error: ' . $e->getMessage());
-            return $this->error('Failed to process subscription: ' . $e->getMessage(), 500);
+            Log::error('Subscription error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'plan' => $request->plan,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to process subscription', 500);
         }
     }
     
@@ -102,28 +68,16 @@ class SubscriptionController
      */
     public function show(Request $request): JsonResponse
     {
-        $user = $request->user();
-        
-        if (!$user->subscribed() && !$user->onTrial()) {
-            return $this->success([
-                'status' => 'free',
-                'on_trial' => false,
+        try {
+            $data = $this->subscriptionService->getSubscriptionStatus($request->user());
+            return $this->success($data);
+        } catch (\Exception $e) {
+            Log::error('Failed to get subscription status: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'trace' => $e->getTraceAsString()
             ]);
+            return $this->error('Failed to retrieve subscription information', 500);
         }
-        
-        $data = [
-            'status' => $user->subscription() ? $user->subscription()->stripe_status : 'no_subscription',
-            'on_trial' => $user->onTrial(),
-            'trial_ends_at' => $user->trial_ends_at,
-        ];
-        
-        if ($user->subscription()) {
-            $data['plan'] = $user->subscription()->name;
-            $data['ends_at'] = $user->subscription()->ends_at;
-            $data['canceled'] = $user->subscription()->canceled();
-        }
-        
-        return $this->success($data);
     }
     
     /**
@@ -135,18 +89,18 @@ class SubscriptionController
             return $this->error('Unauthorized to cancel subscription', 403);
         }
 
-        $user = $request->user();
-        
-        if (!$user->subscribed()) {
-            return $this->error('You do not have an active subscription', 400);
+        try {
+            $this->subscriptionService->cancelSubscription($request->user());
+            return $this->success(null, 'Subscription has been cancelled');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('Subscription cancellation failed: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to cancel subscription', 500);
         }
-        
-        $user->subscription()->cancel();
-        
-        // Log activity
-        activity()->causedBy($user)->log('cancelled subscription');
-        
-        return $this->success(null, 'Subscription has been cancelled');
     }
     
     /**
@@ -158,18 +112,18 @@ class SubscriptionController
             return $this->error('Unauthorized to resume subscription', 403);
         }
 
-        $user = $request->user();
-        
-        if (!$user->subscription() || !$user->subscription()->canceled()) {
-            return $this->error('Subscription cannot be resumed', 400);
+        try {
+            $this->subscriptionService->resumeSubscription($request->user());
+            return $this->success(null, 'Subscription has been resumed');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('Subscription resume failed: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to resume subscription', 500);
         }
-        
-        $user->subscription()->resume();
-        
-        // Log activity
-        activity()->causedBy($user)->log('resumed subscription');
-        
-        return $this->success(null, 'Subscription has been resumed');
     }
     
     /**
@@ -183,20 +137,21 @@ class SubscriptionController
             return $this->error('Unauthorized to start trial', 403);
         }
         
-        if ($user->onTrial() || $user->trial_ends_at !== null) {
-            return $this->error('You have already used your trial period', 400);
+        try {
+            $this->subscriptionService->startTrial($user);
+            return $this->success(
+                new UserResource($user->fresh('roles')), 
+                'Trial started successfully'
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('Failed to start trial: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to start trial', 500);
         }
-        
-        // Check if user already has an active premium subscription
-        if ($user->subscribed()) {
-            return $this->error('You already have a premium subscription, no need for a trial', 400);
-        }
-        
-        $trialDays = config('subscription.trial_days', 30);
-        $user->trial_ends_at = Carbon::now()->addDays($trialDays);
-        $user->save();
-        
-        // Assign trial role, preserving admin role if user has it
         if ($user->hasRole('admin')) {
             $user->syncRoles(['admin', 'trial']);
         } else {
@@ -223,24 +178,21 @@ class SubscriptionController
         try {
             $user = $request->user();
             
-            // Update the customer's default payment method
-            $user->updateDefaultPaymentMethod($request->payment_method);
-            
-            // Sync payment method data to user
-            $user->updateDefaultPaymentMethodFromStripe();
-            
-            // Log activity
-            activity()
-                ->causedBy($user)
-                ->log('updated payment method');
+            $this->subscriptionService->updatePaymentMethod(
+                $user, 
+                $request->payment_method
+            );
             
             return $this->success(
                 new UserResource($user->fresh()), 
                 'Payment method updated successfully'
             );
         } catch (\Exception $e) {
-            Log::error('Payment method update error: ' . $e->getMessage());
-            return $this->error('Failed to update payment method: ' . $e->getMessage(), 500);
+            Log::error('Payment method update error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to update payment method', 500);
         }
     }
     
@@ -255,26 +207,25 @@ class SubscriptionController
 
         try {
             $user = $request->user();
-            $invoiceId = $request->invoice_id;
-            
-            // Find the invoice by ID
-            $invoice = $user->findInvoice($invoiceId);
-            
-            if (!$invoice) {
-                return $this->error('Invoice not found', 404);
-            }
-            
-            // Log activity
-            activity()
-                ->causedBy($user)
-                ->withProperties(['invoice_id' => $invoiceId])
-                ->log('downloaded invoice');
+            $result = $this->subscriptionService->getInvoice($user, $request->invoice_id);
             
             // Return the PDF invoice
-            return $invoice->download();
+            return $result['invoice']->download();
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 404);
         } catch (\Exception $e) {
-            Log::error('Invoice download error: ' . $e->getMessage());
-            return $this->error('Failed to download invoice: ' . $e->getMessage(), 500);
+            Log::error('Invoice download error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'invoice_id' => $request->invoice_id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to download invoice'
+            ], 500);
         }
     }
 
@@ -294,13 +245,8 @@ class SubscriptionController
                 return $this->success(['invoices' => []], 'No invoices found');
             }
             
-            // Get invoices from Stripe
-            $invoices = $user->invoices();
-            
-            // Log activity
-            activity()
-                ->causedBy($user)
-                ->log('viewed invoices');
+            $result = $this->subscriptionService->listInvoices($user);
+            $invoices = $result['invoices'];
             
             // Return formatted invoices using the resource collection
             return $this->success(new InvoiceCollection(
@@ -309,8 +255,11 @@ class SubscriptionController
                 })
             ));
         } catch (\Exception $e) {
-            Log::error('List invoices error: ' . $e->getMessage());
-            return $this->error('Failed to retrieve invoices: ' . $e->getMessage(), 500);
+            Log::error('List invoices error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to retrieve invoices', 500);
         }
     }
 }
