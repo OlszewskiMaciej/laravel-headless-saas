@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Modules\Admin\Repositories\Interfaces\ActivityLogRepositoryInterface;
+use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Modules\Admin\Repositories\ActivityLogRepository;
+use App\Modules\Admin\Repositories\ApiKeyRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -13,6 +15,12 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Bind API Key Repository
+        $this->app->bind(
+            ApiKeyRepositoryInterface::class,
+            ApiKeyRepository::class
+        );
+
         // Bind Activity Log Repository
         $this->app->bind(
             ActivityLogRepositoryInterface::class,
