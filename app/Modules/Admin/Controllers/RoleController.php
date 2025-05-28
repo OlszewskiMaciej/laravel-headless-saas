@@ -4,23 +4,34 @@ namespace App\Modules\Admin\Controllers;
 
 use App\Modules\Admin\Resources\RoleCollection;
 use App\Modules\Admin\Resources\RoleResource;
-use App\Modules\Core\Traits\ApiResponse;
+use App\Modules\Admin\Services\RoleManagementService;
+use App\Core\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 
 class RoleController
 {
     use ApiResponse;
 
+    public function __construct(
+        private readonly RoleManagementService $roleManagementService
+    ) {}
+
     /**
      * List all roles
      */
     public function index(): JsonResponse
     {
-        $roles = Role::with('permissions')->get();
-        
-        return $this->success(new RoleCollection($roles));
+        try {
+            $roles = $this->roleManagementService->getAllRoles();
+            
+            return $this->success(new RoleCollection($roles));
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch roles: ' . $e->getMessage());
+            return $this->error('Failed to fetch roles', 500);
+        }
     }
     
     /**
@@ -34,22 +45,20 @@ class RoleController
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
         
-        $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
-        
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
+        try {
+            $role = $this->roleManagementService->createRole(
+                $request->validated(),
+                $request->user()
+            );
+            
+            return $this->success(
+                new RoleResource($role), 
+                'Role created successfully'
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to create role: ' . $e->getMessage());
+            return $this->error('Failed to create role', 500);
         }
-        
-        // Log activity
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($role)
-            ->log('created role');
-        
-        return $this->success(
-            new RoleResource($role->load('permissions')), 
-            'Role created successfully'
-        );
     }
     
     /**
@@ -57,9 +66,14 @@ class RoleController
      */
     public function show(Role $role): JsonResponse
     {
-        $role->load('permissions');
-        
-        return $this->success(new RoleResource($role));
+        try {
+            $role = $this->roleManagementService->getRoleById($role->id);
+            
+            return $this->success(new RoleResource($role));
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch role: ' . $e->getMessage());
+            return $this->error('Failed to fetch role', 500);
+        }
     }
     
     /**
@@ -73,24 +87,21 @@ class RoleController
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
         
-        if ($request->has('name')) {
-            $role->update(['name' => $request->name]);
+        try {
+            $updatedRole = $this->roleManagementService->updateRole(
+                $role,
+                $request->validated(),
+                $request->user()
+            );
+            
+            return $this->success(
+                new RoleResource($updatedRole), 
+                'Role updated successfully'
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to update role: ' . $e->getMessage());
+            return $this->error('Failed to update role', 500);
         }
-        
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->permissions);
-        }
-        
-        // Log activity
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($role)
-            ->log('updated role');
-        
-        return $this->success(
-            new RoleResource($role->fresh('permissions')), 
-            'Role updated successfully'
-        );
     }
     
     /**
@@ -98,18 +109,15 @@ class RoleController
      */
     public function destroy(Request $request, Role $role): JsonResponse
     {
-        if (in_array($role->name, ['admin', 'free', 'premium', 'trial'])) {
-            return $this->error('Cannot delete a system role', 403);
+        try {
+            $this->roleManagementService->deleteRole($role, $request->user());
+            
+            return $this->success(null, 'Role deleted successfully');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 403);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete role: ' . $e->getMessage());
+            return $this->error('Failed to delete role', 500);
         }
-        
-        // Log activity
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($role)
-            ->log('deleted role');
-        
-        $role->delete();
-        
-        return $this->success(null, 'Role deleted successfully');
     }
 }
