@@ -2,18 +2,26 @@
 
 namespace App\Modules\User\Repositories;
 
+use App\Modules\User\Repositories\Interfaces\UserRepositoryInterface;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\QueryBuilder;
 
-class UserRepository
+class UserRepository implements UserRepositoryInterface
 {
     /**
-     * Get all users with pagination
+     * Get all users with pagination, filters, and sorting
      */
-    public function getAllPaginated(int $perPage = 15, array $with = []): LengthAwarePaginator
+    public function getAllPaginated(int $perPage = 15, array $with = [], array $filters = [], array $sorts = []): LengthAwarePaginator
     {
-        return User::with($with)->paginate($perPage);
+        $query = QueryBuilder::for(User::class)
+            ->allowedFilters($filters ?: ['name', 'email'])
+            ->allowedSorts($sorts ?: ['name', 'email', 'created_at'])
+            ->with($with);
+
+        return $query->paginate($perPage);
     }
     
     /**
@@ -27,7 +35,7 @@ class UserRepository
     /**
      * Find a user by ID
      */
-    public function findById(int $id, array $with = []): ?User
+    public function findById(string $id, array $with = []): ?User
     {
         return User::with($with)->find($id);
     }
@@ -41,26 +49,42 @@ class UserRepository
     }
     
     /**
-     * Create a new user
+     * Create a new user with transaction
      */
     public function create(array $data): User
     {
-        return User::create($data);
+        return DB::transaction(function () use ($data) {
+            return User::create($data);
+        });
     }
     
     /**
-     * Update a user
+     * Update a user with transaction
      */
     public function update(User $user, array $data): bool
     {
-        return $user->update($data);
+        return DB::transaction(function () use ($user, $data) {
+            return $user->update($data);
+        });
     }
     
     /**
-     * Delete a user
+     * Delete a user with transaction
      */
     public function delete(User $user): bool
     {
-        return $user->delete();
+        return DB::transaction(function () use ($user) {
+            return $user->delete();
+        });
+    }
+    
+    /**
+     * Sync user roles
+     */
+    public function syncRoles(User $user, array $roles): void
+    {
+        DB::transaction(function () use ($user, $roles) {
+            $user->syncRoles($roles);
+        });
     }
 }

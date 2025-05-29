@@ -6,10 +6,12 @@ use App\Modules\Admin\Repositories\Interfaces\ActivityLogRepositoryInterface;
 use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Modules\Admin\Repositories\Interfaces\RoleRepositoryInterface;
 use App\Modules\Subscription\Repositories\Interfaces\SubscriptionRepositoryInterface;
+use App\Modules\User\Repositories\Interfaces\UserRepositoryInterface;
 use App\Modules\Admin\Repositories\ActivityLogRepository;
 use App\Modules\Admin\Repositories\ApiKeyRepository;
 use App\Modules\Admin\Repositories\RoleRepository;
 use App\Modules\Subscription\Repositories\SubscriptionRepository;
+use App\Modules\User\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -19,6 +21,12 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Bind User Repository
+        $this->app->bind(
+            UserRepositoryInterface::class,
+            UserRepository::class
+        );
+
         // Bind API Key Repository
         $this->app->bind(
             ApiKeyRepositoryInterface::class,
