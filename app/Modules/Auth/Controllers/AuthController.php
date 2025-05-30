@@ -2,19 +2,22 @@
 
 namespace App\Modules\Auth\Controllers;
 
-use App\Models\User;
 use App\Modules\Auth\Requests\LoginRequest;
 use App\Modules\Auth\Requests\RegisterRequest;
 use App\Modules\Auth\Resources\UserResource;
-use App\Modules\Core\Traits\ApiResponse;
+use App\Modules\Auth\Services\AuthService;
+use App\Core\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Log;
 
 class AuthController
 {
     use ApiResponse;
+
+    public function __construct(
+        private readonly AuthService $authService
+    ) {}
 
     /**
      * Register a new user
@@ -49,28 +52,19 @@ class AuthController
      *     ),
      *     @OA\Response(response=422, description="Validation error")
      * )
-     */
-    public function register(RegisterRequest $request): JsonResponse
+     */    public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        
-        // Assign the free role by default
-        $user->assignRole('free');
-        
-        // Create a token
-        $token = $user->createToken('auth_token')->plainTextToken;
-        
-        // Log activity
-        activity()->causedBy($user)->log('registered');
-        
-        return $this->success([
-            'user' => new UserResource($user),
-            'token' => $token
-        ], 'User registered successfully');
+        try {
+            $result = $this->authService->register($request->validated());
+            
+            return $this->success([
+                'user' => new UserResource($result['user']),
+                'token' => $result['token']
+            ], 'User registered successfully');
+        } catch (\Exception $e) {
+            Log::error('Registration failed: ' . $e->getMessage());
+            return $this->error('Registration failed', 500);
+        }
     }
     
     /**
@@ -104,25 +98,21 @@ class AuthController
      *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
      * )
-     */
-    public function login(LoginRequest $request): JsonResponse
+     */    public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
-        
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return $this->error('Invalid credentials', 401);
+        try {
+            $result = $this->authService->login($request->email, $request->password);
+            
+            return $this->success([
+                'user' => new UserResource($result['user']),
+                'token' => $result['token']
+            ], 'Login successful');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 401);
+        } catch (\Exception $e) {
+            Log::error('Login failed: ' . $e->getMessage());
+            return $this->error('Login failed', 500);
         }
-        
-        // Create a new token
-        $token = $user->createToken('auth_token')->plainTextToken;
-        
-        // Log activity
-        activity()->causedBy($user)->log('logged in');
-        
-        return $this->success([
-            'user' => new UserResource($user),
-            'token' => $token
-        ], 'Login successful');
     }
     
     /**
@@ -132,17 +122,18 @@ class AuthController
     {
         return $this->success(new UserResource($request->user()));
     }
-    
-    /**
+      /**
      * Logout a user
      */
     public function logout(Request $request): JsonResponse
     {
-        // Log activity
-        activity()->causedBy($request->user())->log('logged out');
-        
-        $request->user()->tokens()->delete();
-        
-        return $this->success(null, 'Logged out successfully');
+        try {
+            $this->authService->logout($request->user());
+            
+            return $this->success(null, 'Logged out successfully');
+        } catch (\Exception $e) {
+            Log::error('Logout failed: ' . $e->getMessage());
+            return $this->error('Logout failed', 500);
+        }
     }
 }
