@@ -6,17 +6,21 @@ use App\Models\User;
 use App\Modules\Admin\Requests\CreateUserRequest;
 use App\Modules\Admin\Requests\UpdateUserRequest;
 use App\Modules\Admin\Resources\UserCollection;
+use App\Modules\Admin\Services\UserManagementService;
 use App\Modules\Auth\Resources\UserResource;
-use App\Modules\Core\Traits\ApiResponse;
+use App\Core\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
-use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Support\Facades\Log;
 
 class UserController
 {
     use ApiResponse;
+
+    public function __construct(
+        private readonly UserManagementService $userManagementService
+    ) {}
 
     /**
      * List all users
@@ -27,14 +31,18 @@ class UserController
             return $this->error('Unauthorized to view users', 403);
         }
 
-        $users = QueryBuilder::for(User::class)
-            ->allowedFilters(['name', 'email'])
-            ->allowedSorts(['name', 'email', 'created_at'])
-            ->with('roles')
-            ->paginate($request->per_page ?? 15)
-            ->appends($request->query());
-        
-        return $this->success(new UserCollection($users));
+        try {
+            $users = $this->userManagementService->getAllUsers(
+                $request->per_page ?? 15,
+                $request->only(['name', 'email']), // filters
+                $request->only(['sort']) // sorts
+            );
+            
+            return $this->success(new UserCollection($users));
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch users: ' . $e->getMessage());
+            return $this->error('Failed to fetch users', 500);
+        }
     }
 
     /**
@@ -46,25 +54,20 @@ class UserController
             return $this->error('Unauthorized to create users', 403);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        try {
+            $user = $this->userManagementService->createUser(
+                $request->validated(),
+                $request->user()
+            );
 
-        $user->syncRoles($request->roles);
-
-        // Log activity
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($user)
-            ->withProperties(['roles' => $request->roles])
-            ->log('created user');
-
-        return $this->success(
-            new UserResource($user->load('roles')), 
-            'User created successfully'
-        );
+            return $this->success(
+                new UserResource($user), 
+                'User created successfully'
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to create user: ' . $e->getMessage());
+            return $this->error('Failed to create user', 500);
+        }
     }
     
     /**
@@ -76,9 +79,14 @@ class UserController
             return $this->error('Unauthorized to view user', 403);
         }
 
-        $user->load(['roles']);
-        
-        return $this->success(new UserResource($user));
+        try {
+            $user = $this->userManagementService->getUserById($user->id);
+            
+            return $this->success(new UserResource($user));
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch user: ' . $e->getMessage());
+            return $this->error('Failed to fetch user', 500);
+        }
     }
     
     /**
@@ -90,32 +98,21 @@ class UserController
             return $this->error('Unauthorized to update user', 403);
         }
 
-        $user->update($request->only(['name', 'email']));
-        
-        // Update roles if specified
-        if ($request->has('roles')) {
-            // Check if user currently has admin role, preserve it if they do
-            if ($user->hasRole('admin')) {
-                $roles = $request->roles;
-                if (!in_array('admin', $roles)) {
-                    $roles[] = 'admin';
-                }
-                $user->syncRoles($roles);
-            } else {
-                $user->syncRoles($request->roles);
-            }
+        try {
+            $updatedUser = $this->userManagementService->updateUser(
+                $user,
+                $request->validated(),
+                $request->user()
+            );
+            
+            return $this->success(
+                new UserResource($updatedUser), 
+                'User updated successfully'
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to update user: ' . $e->getMessage());
+            return $this->error('Failed to update user', 500);
         }
-        
-        // Log activity
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($user)
-            ->log('updated user');
-        
-        return $this->success(
-            new UserResource($user->fresh('roles')), 
-            'User updated successfully'
-        );
     }
     
     /**
@@ -130,15 +127,14 @@ class UserController
         if ($user->id === $request->user()->id) {
             return $this->error('You cannot delete your own account', 403);
         }
-        
-        // Log activity
-        activity()
-            ->causedBy($request->user())
-            ->performedOn($user)
-            ->log('deleted user');
-        
-        $user->delete();
-        
-        return $this->success(null, 'User deleted successfully');
+
+        try {
+            $this->userManagementService->deleteUser($user, $request->user());
+            
+            return $this->success(null, 'User deleted successfully');
+        } catch (\Exception $e) {
+            Log::error('Failed to delete user: ' . $e->getMessage());
+            return $this->error('Failed to delete user', 500);
+        }
     }
 }
