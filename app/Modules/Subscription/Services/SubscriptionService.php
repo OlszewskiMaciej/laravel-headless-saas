@@ -224,4 +224,136 @@ class SubscriptionService
             throw $e;
         }
     }
+
+    /**
+     * Create a Stripe Checkout session for subscription
+     */
+    public function createCheckoutSession(User $user, array $data): array
+    {
+        try {
+            // Validate plan if provided
+            if (isset($data['plan'])) {
+                $plans = config('subscription.plans');
+                $planName = $data['plan'];
+                
+                if (!isset($plans[$planName])) {
+                    throw new \InvalidArgumentException('Invalid plan selected');
+                }
+                
+                $plan = $plans[$planName];
+            }
+            
+            // Check if user is subscribing to a plan or starting a trial
+            $mode = $data['mode'] ?? 'subscription';
+            
+            // Create success and cancel URLs
+            $successUrl = $data['success_url'] ?? config('app.frontend_url') . '/subscription/success';
+            $cancelUrl = $data['cancel_url'] ?? config('app.frontend_url') . '/subscription/cancel';
+            
+            // Build checkout session parameters
+            $checkoutParams = [
+                'customer' => $this->getStripeCustomerId($user),
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+                'mode' => $mode,
+            ];
+            
+            // For subscription mode, add line items based on the selected plan
+            if ($mode === 'subscription' && isset($data['plan'])) {
+                $checkoutParams['line_items'] = [[
+                    'price' => $plan['stripe_id'],
+                    'quantity' => 1,
+                ]];
+            }
+            
+            // Add trial days if specified
+            if (isset($data['trial_days']) && $data['trial_days'] > 0) {
+                $checkoutParams['subscription_data'] = [
+                    'trial_period_days' => $data['trial_days'],
+                ];
+            }
+            
+            // Create the Stripe Checkout session
+            $session = \Stripe\Checkout\Session::create($checkoutParams);
+            
+            // Log activity
+            activity()
+                ->causedBy($user)
+                ->withProperties([
+                    'plan' => $data['plan'] ?? null,
+                    'mode' => $mode,
+                    'session_id' => $session->id,
+                ])
+                ->log('created checkout session');
+            
+            return [
+                'url' => $session->url,
+                'session_id' => $session->id,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to create Checkout session: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+    
+    /**
+     * Create a Stripe Billing Portal session
+     */
+    public function createBillingPortalSession(User $user, array $data = []): array
+    {
+        try {
+            // Ensure user has a Stripe customer ID
+            if (!$user->stripe_id) {
+                throw new \InvalidArgumentException('User does not have a Stripe customer ID');
+            }
+            
+            // Set return URL (where the user will be redirected after leaving the portal)
+            $returnUrl = $data['return_url'] ?? config('app.frontend_url') . '/account';
+            
+            // Create Billing Portal session
+            $session = \Stripe\BillingPortal\Session::create([
+                'customer' => $user->stripe_id,
+                'return_url' => $returnUrl,
+            ]);
+            
+            // Log activity
+            activity()
+                ->causedBy($user)
+                ->withProperties(['session_id' => $session->id])
+                ->log('accessed billing portal');
+            
+            return [
+                'url' => $session->url,
+                'session_id' => $session->id,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to create Billing Portal session: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+    
+    /**
+     * Get or create a Stripe customer ID for the user
+     */
+    protected function getStripeCustomerId(User $user): string
+    {
+        // If user already has a Stripe customer ID, return it
+        if ($user->stripe_id) {
+            return $user->stripe_id;
+        }
+        
+        // Otherwise, create a customer in Stripe and return the ID
+        $customer = $user->createAsStripeCustomer([
+            'email' => $user->email,
+            'name' => $user->name,
+        ]);
+        
+        return $customer->id;
+    }
 }

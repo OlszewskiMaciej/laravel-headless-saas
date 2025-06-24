@@ -8,6 +8,8 @@ use App\Modules\Subscription\Requests\GetInvoiceRequest;
 use App\Modules\Subscription\Requests\ListInvoicesRequest;
 use App\Modules\Subscription\Requests\SubscribeRequest;
 use App\Modules\Subscription\Requests\UpdatePaymentMethodRequest;
+use App\Modules\Subscription\Requests\CheckoutRequest;
+use App\Modules\Subscription\Requests\BillingPortalRequest;
 use App\Modules\Subscription\Resources\InvoiceCollection;
 use App\Modules\Subscription\Resources\InvoiceResource;
 use App\Modules\Subscription\Services\SubscriptionService;
@@ -260,6 +262,57 @@ class SubscriptionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return $this->error('Failed to retrieve invoices', 500);
+        }
+    }
+    
+    /**
+     * Create Stripe Checkout session
+     */
+    public function checkout(CheckoutRequest $request): JsonResponse
+    {
+        if (!$request->user()->can('subscribe to plan')) {
+            return $this->error('Unauthorized to subscribe', 403);
+        }
+
+        try {
+            $result = $this->subscriptionService->createCheckoutSession(
+                $request->user(),
+                $request->validated()
+            );
+            
+            return $this->success(['url' => $result['url']], 'Checkout session created successfully');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        } catch (\Exception $e) {
+            Log::error('Checkout session creation error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'plan' => $request->plan ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to create checkout session', 500);
+        }
+    }
+    
+    /**
+     * Create Stripe Billing Portal session
+     */
+    public function billingPortal(BillingPortalRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->subscriptionService->createBillingPortalSession(
+                $request->user(),
+                $request->validated()
+            );
+            
+            return $this->success(['url' => $result['url']], 'Billing portal session created successfully');
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        } catch (\Exception $e) {
+            Log::error('Billing portal session creation error: ' . $e->getMessage(), [
+                'user_id' => $request->user()->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to create billing portal session', 500);
         }
     }
 }
