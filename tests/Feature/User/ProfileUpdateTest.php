@@ -55,7 +55,8 @@ class ProfileUpdateTest extends TestCase
 
     /**
      * Test a user can change their password
-     */    public function test_user_can_change_password(): void
+     */    
+    public function test_user_can_change_password(): void
     {
         $user = User::factory()->create([
             'password' => Hash::make('current-password'),
@@ -149,7 +150,8 @@ class ProfileUpdateTest extends TestCase
 
     /**
      * Test a user can update profile and change password simultaneously
-     */    public function test_user_can_update_profile_and_change_password_simultaneously(): void
+     */    
+    public function test_user_can_update_profile_and_change_password_simultaneously(): void
     {
         $user = User::factory()->create([
             'name' => 'John Doe',
@@ -183,5 +185,26 @@ class ProfileUpdateTest extends TestCase
         $this->assertEquals('Updated Name', $user->name);
         $this->assertEquals('updated@example.com', $user->email);
         $this->assertTrue(Hash::check('new-password123', $user->password));
+    }
+
+    public function test_users_can_get_their_profile(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('free');
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        $response = $this->withApiToken($token)
+            ->getJson('/api/user/profile');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'id',
+                    'name',
+                    'email',
+                ]
+            ]);
     }
 }

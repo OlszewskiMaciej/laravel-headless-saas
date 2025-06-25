@@ -75,25 +75,4 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
-
-    public function test_users_can_get_their_profile(): void
-    {
-        $user = User::factory()->create();
-        $user->assignRole('free');
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        $response = $this->withApiToken($token)
-            ->getJson('/api/auth/me');
-
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'status',
-                'message',
-                'data' => [
-                    'id',
-                    'name',
-                    'email',
-                ]
-            ]);
-    }
 }
