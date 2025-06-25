@@ -21,4 +21,6 @@ interface UserRepositoryInterface
     public function update(User $user, array $data): bool;
     
     public function delete(User $user): bool;
+    
+    public function syncRoles(User $user, array $roles): void;
 }
