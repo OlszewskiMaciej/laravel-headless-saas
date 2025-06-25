@@ -273,6 +273,10 @@ class SubscriptionController extends Controller
         if (!$request->user()->can('subscribe to plan')) {
             return $this->error('Unauthorized to subscribe', 403);
         }
+        
+        if (!$request->user()->subscribed()) {
+            return $this->error('You have an active subscription', 403);
+        }
 
         try {
             $result = $this->subscriptionService->createCheckoutSession(
