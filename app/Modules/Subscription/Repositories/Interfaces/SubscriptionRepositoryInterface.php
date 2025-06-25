@@ -18,4 +18,12 @@ interface SubscriptionRepositoryInterface
     public function resumeSubscription(Subscription $subscription): bool;
     
     public function isUserSubscribed(User $user): bool;
+    
+    public function isUserOnTrial(User $user): bool;
+    
+    public function startTrial(User $user, int $trialDays): bool;
+    
+    public function findByStripeId(string $stripeId): ?Subscription;
+    
+    public function updateStatus(Subscription $subscription, string $status): bool;
 }
