@@ -274,8 +274,8 @@ class SubscriptionController extends Controller
             return $this->error('Unauthorized to subscribe', 403);
         }
         
-        if (!$request->user()->subscribed()) {
-            return $this->error('You have an active subscription', 403);
+        if ($this->subscriptionService->getSubscriptionStatus($request->user())['has_subscription']) {
+            return $this->error('You already have an active subscription or trial', 403);
         }
 
         try {

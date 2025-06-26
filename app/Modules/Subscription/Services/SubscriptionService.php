@@ -33,10 +33,10 @@ class SubscriptionService
             
             $plan = $plans[$planName];
             
-            // Check if user already has an active subscription
             if ($this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You already have an active subscription');
-            }            // Create Stripe subscription
+                throw new \InvalidArgumentException('You already have an active subscription or trial');
+            }
+
             $subscription = $user->newSubscription($planName, $plan['stripe_id'])
                 ->create($data['payment_method'] ?? null);
             
@@ -62,35 +62,163 @@ class SubscriptionService
             throw $e;
         }
     }    
-    
-    /**
+     /**
      * Get subscription status
-     */      public function getSubscriptionStatus(User $user): array
+     */      
+    public function getSubscriptionStatus(User $user): array
     {
-        if (!$this->subscriptionRepository->isUserSubscribed($user) && !$this->subscriptionRepository->isUserOnTrial($user)) {
+        // Check if user has active trial first
+        $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+        
+        // Jeśli użytkownik nie ma stripe_id, sprawdź tylko trial lokalny
+        if (!$user->stripe_id) {
             return [
-                'status' => 'free',
-                'on_trial' => false,
+                'status' => $isOnActiveTrial ? 'trial' : 'free',
+                'has_subscription' => $isOnActiveTrial, // Treat active trial as having subscription
+                'on_trial' => $isOnActiveTrial,
+                'trial_ends_at' => $user->trial_ends_at,
+                'source' => 'local'
+            ];
+        }
+
+        // Sprawdź najpierw lokalne subskrypcje
+        $localSubscription = $this->subscriptionRepository->findUserSubscription($user);
+        
+        // Check if user has active trial
+        $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+        
+        // Jeśli mamy lokalną subskrypcję, użyj jej
+        if ($localSubscription && $localSubscription->active()) {
+            return [
+                'status' => $localSubscription->stripe_status,
+                'has_subscription' => true,
+                'on_trial' => $localSubscription->onTrial(),
+                'trial_ends_at' => $localSubscription->trial_ends_at,
+                'plan' => $localSubscription->name,
+                'ends_at' => $localSubscription->ends_at,
+                'canceled' => $localSubscription->canceled(),
+                'stripe_subscription_id' => $localSubscription->stripe_id,
+                'source' => 'local'
             ];
         }
         
-        // Get the subscription using the repository method that we've improved
-        $subscription = $this->subscriptionRepository->findUserSubscription($user);
-        
-        $data = [
-            'status' => $subscription ? $subscription->stripe_status : 'no_subscription',
-            'on_trial' => $this->subscriptionRepository->isUserOnTrial($user),
-            'trial_ends_at' => $user->trial_ends_at,
-        ];
-        
-        if ($subscription) {
-            $data['plan'] = $subscription->name;
-            $data['ends_at'] = $subscription->ends_at;
-            $data['canceled'] = $subscription->canceled();
+        // If user has active trial but no local subscription, treat as premium trial user
+        if ($isOnActiveTrial) {
+            return [
+                'status' => 'trial',
+                'has_subscription' => true, // Treat active trial as having subscription
+                'on_trial' => true,
+                'trial_ends_at' => $user->trial_ends_at,
+                'plan' => 'trial',
+                'source' => 'local'
+            ];
         }
-        
-        return $data;
-    }   
+
+        // Jeśli nie ma lokalnej subskrypcji, sprawdź bezpośrednio w Stripe
+        return $this->getSubscriptionStatusFromStripe($user);
+    }
+
+    /**
+     * Get subscription status directly from Stripe API
+     */
+    public function getSubscriptionStatusFromStripe(User $user): array
+    {
+        try {
+            // Check if user has active trial first
+            $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+            
+            if (!$user->stripe_id) {
+                return [
+                    'status' => $isOnActiveTrial ? 'trial' : 'free',
+                    'has_subscription' => $isOnActiveTrial, // Treat active trial as having subscription
+                    'on_trial' => $isOnActiveTrial,
+                    'trial_ends_at' => $user->trial_ends_at,
+                    'source' => 'stripe_fallback'
+                ];
+            }
+
+            // Pobierz subskrypcje ze Stripe
+            $subscriptions = \Stripe\Subscription::all([
+                'customer' => $user->stripe_id,
+                'status' => 'all',
+                'limit' => 10,
+            ]);
+
+            $activeSubscription = null;
+            foreach ($subscriptions->data as $subscription) {
+                if (in_array($subscription->status, ['active', 'trialing', 'past_due'])) {
+                    $activeSubscription = $subscription;
+                    break;
+                }
+            }
+
+            if (!$activeSubscription) {
+                // Check if user has active trial
+                $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+                
+                return [
+                    'status' => $isOnActiveTrial ? 'trial' : 'free',
+                    'has_subscription' => $isOnActiveTrial, // Treat active trial as having subscription
+                    'on_trial' => $isOnActiveTrial,
+                    'trial_ends_at' => $user->trial_ends_at,
+                    'source' => 'stripe'
+                ];
+            }
+
+            return [
+                'status' => $this->mapStripeStatus($activeSubscription->status),
+                'has_subscription' => true,
+                'stripe_status' => $activeSubscription->status,
+                'stripe_subscription_id' => $activeSubscription->id,
+                'on_trial' => $activeSubscription->status === 'trialing',
+                'trial_ends_at' => $activeSubscription->trial_end ? 
+                    \Carbon\Carbon::createFromTimestamp($activeSubscription->trial_end) : null,
+                'current_period_start' => \Carbon\Carbon::createFromTimestamp($activeSubscription->current_period_start),
+                'current_period_end' => \Carbon\Carbon::createFromTimestamp($activeSubscription->current_period_end),
+                'cancel_at_period_end' => $activeSubscription->cancel_at_period_end,
+                'plan_name' => $activeSubscription->items->data[0]->price->nickname ?? ' ',
+                'plan_amount' => $activeSubscription->items->data[0]->price->unit_amount / 100,
+                'plan_currency' => $activeSubscription->items->data[0]->price->currency,
+                'plan_interval' => $activeSubscription->items->data[0]->price->recurring->interval,
+                'source' => 'stripe'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get subscription status from Stripe: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'stripe_id' => $user->stripe_id,
+            ]);
+
+            // Even on error, check for active trial
+            $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+
+            return [
+                'status' => $isOnActiveTrial ? 'trial' : 'unknown',
+                'has_subscription' => $isOnActiveTrial, // Treat active trial as having subscription
+                'error' => 'Failed to retrieve subscription data',
+                'on_trial' => $isOnActiveTrial,
+                'trial_ends_at' => $user->trial_ends_at,
+                'source' => 'error'
+            ];
+        }
+    }
+
+    /**
+     * Map Stripe status to our internal status
+     */
+    private function mapStripeStatus(string $stripeStatus): string
+    {
+        return match($stripeStatus) {
+            'active' => 'active',
+            'trialing' => 'trial',
+            'past_due' => 'past_due',
+            'canceled' => 'canceled',
+            'unpaid' => 'canceled',
+            'incomplete' => 'incomplete',
+            'incomplete_expired' => 'expired',
+            default => 'unknown'
+        };
+    }
     
     /**
      * Cancel subscription
@@ -99,11 +227,25 @@ class SubscriptionService
     {
         try {
             if (!$this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You do not have an active subscription');
+                throw new \InvalidArgumentException('You do not have an active subscription or trial');
             }
             
             $subscription = $this->subscriptionRepository->findUserSubscription($user);
-            $this->subscriptionRepository->cancelSubscription($subscription);
+            
+            // If user has a formal subscription, cancel it
+            if ($subscription) {
+                $this->subscriptionRepository->cancelSubscription($subscription);
+            }
+            
+            // If user is on trial without formal subscription, end the trial
+            if (!$subscription && $user->trial_ends_at && $user->trial_ends_at->isFuture()) {
+                $user->trial_ends_at = now();
+                $user->save();
+                
+                // Update role back to free, preserving admin if they have it
+                $roles = $user->hasRole('admin') ? ['admin', 'free'] : ['free'];
+                $this->userRepository->syncRoles($user, $roles);
+            }
             
             // Log activity
             activity()->causedBy($user)->log('cancelled subscription');
@@ -149,9 +291,8 @@ class SubscriptionService
                 throw new \InvalidArgumentException('You have already used your trial period');
             }
             
-            // Check if user already has an active premium subscription
             if ($this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You already have a premium subscription, no need for a trial');
+                throw new \InvalidArgumentException('You already have a premium subscription or active trial');
             }
             
             $trialDays = config('subscription.trial_days', 30);
