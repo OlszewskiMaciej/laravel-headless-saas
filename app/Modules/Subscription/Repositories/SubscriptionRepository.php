@@ -60,27 +60,37 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
             $subscription->resume();
             return true;
         });
-    }    /**
+    }    
+    
+    /**
      * Check if user is subscribed
      */
     public function isUserSubscribed(User $user): bool
     {
-        // Check both the role and the actual subscription using active() query scope
-        // A user with premium role or an active subscription in the database is considered subscribed
+        // Check if user has premium role, active subscription, or active trial
+        // Users with active trials should be treated as subscribed (premium access)
+        $hasActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+        
         return $user->hasRole('premium') || 
+               $user->hasRole('trial') ||
+               $hasActiveTrial ||
                $user->subscriptions()->active()->first() !== null;
     }
-    
+      
     /**
      * Check if user is on trial
      */
     public function isUserOnTrial(User $user): bool
     {
-        // Use the subscriptions query builder to find subscriptions on trial
+        // Check if user has trial role, active subscription trial, or active local trial
+        $hasActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+        
         return $user->hasRole('trial') || 
+               $hasActiveTrial ||
                $user->subscriptions()->onTrial()->first() !== null;
     }
-      /**
+      
+    /**
      * Start trial for user
      */
     public function startTrial(User $user, int $trialDays): bool
