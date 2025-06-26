@@ -56,14 +56,14 @@ Route::middleware('api-key')->prefix('auth')->name('auth.')->group(function () {
 Route::middleware(['api-key', 'auth:sanctum'])->group(function () {
     Route::prefix('subscription')->name('subscription.')->group(function () {
         // Existing subscription routes
-        Route::post('/', [SubscriptionController::class, 'subscribe'])->name('subscribe')->middleware('permission:subscribe to plan');
+        // Route::post('/', [SubscriptionController::class, 'subscribe'])->name('subscribe')->middleware('permission:subscribe to plan');
         Route::get('/', [SubscriptionController::class, 'show'])->name('show');
-        Route::post('cancel', [SubscriptionController::class, 'cancel'])->name('cancel')->middleware('permission:cancel subscription');
-        Route::post('resume', [SubscriptionController::class, 'resume'])->name('resume')->middleware('permission:resume subscription');
+        // Route::post('cancel', [SubscriptionController::class, 'cancel'])->name('cancel')->middleware('permission:cancel subscription');
+        // Route::post('resume', [SubscriptionController::class, 'resume'])->name('resume')->middleware('permission:resume subscription');
         Route::post('start-trial', [SubscriptionController::class, 'startTrial'])->name('start-trial')->middleware('permission:start trial');
-        Route::post('payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('update-payment-method');
-        Route::get('invoice', [SubscriptionController::class, 'getInvoice'])->name('get-invoice')->middleware('permission:get invoice');
-        Route::get('invoices', [SubscriptionController::class, 'listInvoices'])->name('list-invoices')->middleware('permission:get invoice');
+        // Route::post('payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('update-payment-method');
+        // Route::get('invoice', [SubscriptionController::class, 'getInvoice'])->name('get-invoice')->middleware('permission:get invoice');
+        // Route::get('invoices', [SubscriptionController::class, 'listInvoices'])->name('list-invoices')->middleware('permission:get invoice');
         
         // New Stripe Checkout and Billing Portal routes
         Route::post('checkout', [SubscriptionController::class, 'checkout'])->name('checkout')->middleware('permission:subscribe to plan');
