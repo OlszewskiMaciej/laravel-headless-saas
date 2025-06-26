@@ -125,46 +125,6 @@
           "response": []
         },
         {
-          "name": "Get Profile",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{auth_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "X-API-KEY",
-                "value": "{{api_key_test}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/auth/me",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "me"
-              ]
-            },
-            "description": "Get authenticated user's profile"
-          },
-          "response": []        },
-        {
           "name": "Forgot Password",
           "request": {
             "method": "POST",
@@ -601,106 +561,6 @@
           "response": []
         },
         {
-          "name": "Create Checkout Session",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{auth_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "X-API-KEY",
-                "value": "{{api_key_test}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"plan\": \"monthly\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/subscription/checkout",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "subscription",
-                "checkout"
-              ]
-            },
-            "description": "Create a Stripe Checkout session for subscription"
-          },
-          "response": []
-        },
-        {
-          "name": "Create Billing Portal Session",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{auth_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "X-API-KEY",
-                "value": "{{api_key_test}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"return_url\": \"{{frontend_url}}/account\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/subscription/billing-portal",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "subscription",
-                "billing-portal"
-              ]
-            },
-            "description": "Create a Stripe Billing Portal session for managing subscriptions and invoices"
-          },
-          "response": []
-        },
-        {
           "name": "Resume Subscription",
           "request": {
             "auth": {
@@ -824,7 +684,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"return_url\": \"{{frontend_url}}/account\"\n}"
+              "raw": "{\n    \"return_url\": \"{{frontend_url}}/profile\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/subscription/billing-portal",
