@@ -71,8 +71,8 @@ class SubscriptionService
 
         // Jeśli nie ma lokalnej subskrypcji, sprawdź bezpośrednio w Stripe
         return $this->getSubscriptionStatusFromStripe($user);
-    }
-
+    }    
+    
     /**
      * Get subscription status directly from Stripe API
      */
@@ -81,7 +81,7 @@ class SubscriptionService
         try {
             // Check if user has active trial first
             $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
-            
+
             if (!$user->stripe_id) {
                 return [
                     'status' => $isOnActiveTrial ? 'trial' : 'free',
@@ -91,7 +91,7 @@ class SubscriptionService
                     'source' => 'stripe_fallback'
                 ];
             }
-
+            
             // Pobierz subskrypcje ze Stripe
             $subscriptions = \Stripe\Subscription::all([
                 'customer' => $user->stripe_id,
@@ -139,10 +139,10 @@ class SubscriptionService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to get subscription status from Stripe: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'stripe_id' => $user->stripe_id,
-            ]);
+                Log::error('Failed to get subscription status from Stripe: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'stripe_id' => $user->stripe_id,
+                ]);
 
             // Even on error, check for active trial
             $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
@@ -208,30 +208,6 @@ class SubscriptionService
             return true;
         } catch (\Exception $e) {
             Log::error('Subscription cancellation failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Resume subscription
-     */
-    public function resumeSubscription(User $user): bool
-    {
-        try {
-            $subscription = $this->subscriptionRepository->findUserSubscription($user);
-            
-            if (!$subscription || !$subscription->canceled()) {
-                throw new \InvalidArgumentException('Subscription cannot be resumed');
-            }
-            
-            $this->subscriptionRepository->resumeSubscription($subscription);
-            
-            // Log activity
-            activity()->causedBy($user)->log('resumed subscription');
-            
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Subscription resume failed: ' . $e->getMessage());
             throw $e;
         }
     }

@@ -69,29 +69,6 @@ class SubscriptionController extends Controller
     }
     
     /**
-     * Resume subscription
-     */
-    public function resume(Request $request): JsonResponse
-    {
-        if (!$request->user()->can('resume subscription')) {
-            return $this->error('Unauthorized to resume subscription', 403);
-        }
-
-        try {
-            $this->subscriptionService->resumeSubscription($request->user());
-            return $this->success(null, 'Subscription has been resumed');
-        } catch (\InvalidArgumentException $e) {
-            return $this->error($e->getMessage(), 400);
-        } catch (\Exception $e) {
-            Log::error('Subscription resume failed: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $this->error('Failed to resume subscription', 500);
-        }
-    }
-    
-    /**
      * Start free trial
      */    
     public function startTrial(Request $request): JsonResponse
