@@ -173,32 +173,6 @@ class SubscriptionController extends Controller
     }
     
     /**
-     * Update payment method
-     */
-    public function updatePaymentMethod(UpdatePaymentMethodRequest $request): JsonResponse
-    {
-        try {
-            $user = $request->user();
-            
-            $this->subscriptionService->updatePaymentMethod(
-                $user, 
-                $request->payment_method
-            );
-            
-            return $this->success(
-                new UserResource($user->fresh()), 
-                'Payment method updated successfully'
-            );
-        } catch (\Exception $e) {
-            Log::error('Payment method update error: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $this->error('Failed to update payment method', 500);
-        }
-    }
-    
-    /**
      * Create Stripe Checkout session
      */
     public function checkout(CheckoutRequest $request): JsonResponse

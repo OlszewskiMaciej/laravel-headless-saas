@@ -316,24 +316,6 @@ class SubscriptionService
     }
 
     /**
-     * Update payment method
-     */
-    public function updatePaymentMethod(User $user, string $paymentMethod): bool
-    {
-        try {
-            $user->updateDefaultPaymentMethod($paymentMethod);
-            
-            // Log activity
-            activity()->causedBy($user)->log('updated payment method');
-            
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Payment method update failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
      * Create a Stripe Checkout session for subscription
      */
     public function createCheckoutSession(User $user, array $data): array
