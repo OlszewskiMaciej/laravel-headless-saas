@@ -3,7 +3,6 @@
 namespace App\Modules\Subscription\Repositories;
 
 use App\Modules\Subscription\Repositories\Interfaces\SubscriptionRepositoryInterface;
-use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -11,70 +10,17 @@ use Illuminate\Support\Facades\DB;
 class SubscriptionRepository implements SubscriptionRepositoryInterface
 {
     /**
-     * Find user's subscription
-     */
-    public function findUserSubscription(User $user): ?Subscription
-    {
-        // Return active subscriptions first, then fall back to any subscription
-        return $user->subscriptions()->active()->first() ?? 
-               $user->subscriptions()->orderBy('created_at', 'desc')->first();
-    }
-    
-    /**
-     * Create a new subscription with transaction
-     */
-    public function createSubscription(User $user, array $data): Subscription
-    {
-        return DB::transaction(function () use ($user, $data) {
-            return $user->subscriptions()->create($data);
-        });
-    }
-    
-    /**
-     * Update subscription with transaction
-     */
-    public function updateSubscription(Subscription $subscription, array $data): bool
-    {
-        return DB::transaction(function () use ($subscription, $data) {
-            return $subscription->update($data);
-        });
-    }
-    
-    /**
-     * Cancel subscription
-     */
-    public function cancelSubscription(Subscription $subscription): bool
-    {
-        return DB::transaction(function () use ($subscription) {
-            $subscription->cancel();
-            return true;
-        });
-    }
-    
-    /**
-     * Resume subscription
-     */
-    public function resumeSubscription(Subscription $subscription): bool
-    {
-        return DB::transaction(function () use ($subscription) {
-            $subscription->resume();
-            return true;
-        });
-    }    
-    
-    /**
      * Check if user is subscribed
      */
     public function isUserSubscribed(User $user): bool
     {
-        // Check if user has premium role, active subscription, or active trial
+        // Check if user has premium role or active trial
         // Users with active trials should be treated as subscribed (premium access)
         $hasActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
         
         return $user->hasRole('premium') || 
                $user->hasRole('trial') ||
-               $hasActiveTrial ||
-               $user->subscriptions()->active()->first() !== null;
+               $hasActiveTrial;
     }
       
     /**
@@ -82,12 +28,11 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
      */
     public function isUserOnTrial(User $user): bool
     {
-        // Check if user has trial role, active subscription trial, or active local trial
+        // Check if user has trial role or active local trial
         $hasActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
         
         return $user->hasRole('trial') || 
-               $hasActiveTrial ||
-               $user->subscriptions()->onTrial()->first() !== null;
+               $hasActiveTrial;
     }
       
     /**
@@ -100,23 +45,31 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
             return $user->save();
         });
     }
-    
+
     /**
-     * Find subscription by Stripe ID
+     * Get user's active subscription from local database
      */
-    public function findByStripeId(string $stripeId): ?Subscription
+    public function getActiveSubscriptionFromLocal(User $user): ?\App\Models\Subscription
     {
-        return Subscription::where('stripe_id', $stripeId)->first();
+        if (!$user->stripe_id) {
+            return null;
+        }
+
+        return $user->subscriptions()
+            ->whereIn('stripe_status', ['active', 'trialing', 'past_due'])
+            ->orderBy('created_at', 'desc')
+            ->first();
     }
-    
+
     /**
-     * Update subscription status
+     * Check if user has any subscription records in local database
      */
-    public function updateStatus(Subscription $subscription, string $status): bool
+    public function hasLocalSubscriptionData(User $user): bool
     {
-        return DB::transaction(function () use ($subscription, $status) {
-            $subscription->stripe_status = $status;
-            return $subscription->save();
-        });
+        if (!$user->stripe_id) {
+            return false;
+        }
+
+        return $user->subscriptions()->exists();
     }
 }

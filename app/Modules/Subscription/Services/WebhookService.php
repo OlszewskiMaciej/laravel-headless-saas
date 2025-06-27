@@ -2,17 +2,14 @@
 
 namespace App\Modules\Subscription\Services;
 
-use App\Modules\Subscription\Repositories\Interfaces\SubscriptionRepositoryInterface;
 use App\Modules\User\Repositories\Interfaces\UserRepositoryInterface;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
-use Laravel\Cashier\Http\Controllers\WebhookController as CashierWebhookController;
 use Stripe\Event;
 
 class WebhookService
 {
     public function __construct(
-        private readonly SubscriptionRepositoryInterface $subscriptionRepository,
         private readonly UserRepositoryInterface $userRepository
     ) {}
 
@@ -43,20 +40,6 @@ class WebhookService
             if (!$user) {
                 Log::warning('User not found for subscription payment', ['customer' => $invoice->customer]);
                 return true;
-            }
-
-            // Get the subscription
-            $subscription = $this->subscriptionRepository->findByStripeId($invoice->subscription);
-            
-            if (!$subscription) {
-                Log::warning('Subscription not found', ['subscription_id' => $invoice->subscription]);
-                return true;
-            }
-
-            // Update subscription status if needed
-            if ($subscription->stripe_status !== 'active') {
-                $this->subscriptionRepository->updateStatus($subscription, 'active');
-                Log::info('Subscription status updated to active', ['user_id' => $user->id]);
             }
 
             // Ensure the user has the premium role, preserving admin role if they have it
@@ -117,33 +100,15 @@ class WebhookService
                 return true;
             }
 
-            // Get the subscription
-            $subscription = $this->subscriptionRepository->findByStripeId($invoice->subscription);
-
-            if (!$subscription) {
-                Log::warning('Subscription not found for failed payment', 
-                    ['subscription_id' => $invoice->subscription]);
-                return true;
-            }
-
-            // After multiple failed attempts (usually 3-4 depending on Stripe settings),
-            // we can consider the subscription as past_due or incomplete
-            if (($invoice->attempt_count ?? 1) >= 3) {
-                $this->subscriptionRepository->updateStatus($subscription, 'past_due');
-                
-                Log::info('Subscription marked as past_due after multiple failed payments', 
-                    ['user_id' => $user->id]);
-                
-                // Log the failed renewal
-                activity()
-                    ->causedBy($user)
-                    ->withProperties([
-                        'subscription_id' => $invoice->subscription,
-                        'invoice_id' => $invoice->id,
-                        'attempt_count' => $invoice->attempt_count ?? 1
-                    ])
-                    ->log('subscription payment failed');
-            }
+            // Log the failed renewal
+            activity()
+                ->causedBy($user)
+                ->withProperties([
+                    'subscription_id' => $invoice->subscription,
+                    'invoice_id' => $invoice->id,
+                    'attempt_count' => $invoice->attempt_count ?? 1
+                ])
+                ->log('subscription payment failed');
 
             return true;
         } catch (\Exception $e) {
