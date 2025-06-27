@@ -52,7 +52,8 @@ class AuthController
      *     ),
      *     @OA\Response(response=422, description="Validation error")
      * )
-     */    public function register(RegisterRequest $request): JsonResponse
+     */    
+    public function register(RegisterRequest $request): JsonResponse
     {
         try {
             $result = $this->authService->register($request->validated());
@@ -98,7 +99,8 @@ class AuthController
      *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
      * )
-     */    public function login(LoginRequest $request): JsonResponse
+     */    
+    public function login(LoginRequest $request): JsonResponse
     {
         try {
             $result = $this->authService->login($request->email, $request->password);
@@ -114,15 +116,8 @@ class AuthController
             return $this->error('Login failed', 500);
         }
     }
-    
+
     /**
-     * Get authenticated user
-     */
-    public function me(Request $request): JsonResponse
-    {
-        return $this->success(new UserResource($request->user()));
-    }
-      /**
      * Logout a user
      */
     public function logout(Request $request): JsonResponse
