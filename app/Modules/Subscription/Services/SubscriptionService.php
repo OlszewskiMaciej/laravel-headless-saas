@@ -334,39 +334,6 @@ class SubscriptionService
     }
 
     /**
-     * Get invoice
-     */
-    public function getInvoice(User $user, string $invoiceId): array
-    {
-        try {
-            $invoice = $user->findInvoice($invoiceId);
-            
-            if (!$invoice) {
-                throw new \InvalidArgumentException('Invoice not found');
-            }
-            
-            return ['invoice' => $invoice];
-        } catch (\Exception $e) {
-            Log::error('Invoice retrieval failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * List invoices
-     */
-    public function listInvoices(User $user): array
-    {
-        try {
-            $invoices = $user->invoices();
-            return ['invoices' => $invoices];
-        } catch (\Exception $e) {
-            Log::error('Invoice listing failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
      * Create a Stripe Checkout session for subscription
      */
     public function createCheckoutSession(User $user, array $data): array
