@@ -5,10 +5,8 @@ namespace App\Modules\Subscription\Services;
 use App\Modules\Subscription\Repositories\Interfaces\SubscriptionRepositoryInterface;
 use App\Modules\User\Repositories\Interfaces\UserRepositoryInterface;
 use App\Models\User;
-use App\Core\Enums\SubscriptionStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Laravel\Cashier\Exceptions\IncompletePayment;
 
 class SubscriptionService
 {
@@ -17,51 +15,6 @@ class SubscriptionService
         private readonly UserRepositoryInterface $userRepository
     ) {}
 
-    /**
-     * Subscribe user to a plan
-     */
-    public function subscribe(User $user, array $data): array
-    {
-        try {
-            // Get plan details from config
-            $plans = config('subscription.plans');
-            $planName = $data['plan'];
-            
-            if (!isset($plans[$planName])) {
-                throw new \InvalidArgumentException('Invalid plan selected');
-            }
-            
-            $plan = $plans[$planName];
-            
-            if ($this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You already have an active subscription or trial');
-            }
-
-            $subscription = $user->newSubscription($planName, $plan['stripe_id'])
-                ->create($data['payment_method'] ?? null);
-            
-            // Update user role - assign premium role (preserving admin if they have it)
-            $roles = $user->hasRole('admin') ? ['admin', 'premium'] : ['premium'];
-            $this->userRepository->syncRoles($user, $roles);
-            
-            // Log activity
-            activity()
-                ->causedBy($user)
-                ->withProperties(['plan' => $planName])
-                ->log('subscribed to plan');
-            
-            return [
-                'user' => $user->fresh(['roles']),
-                'subscription' => $subscription
-            ];
-        } catch (IncompletePayment $e) {
-            Log::error('Incomplete payment during subscription: ' . $e->getMessage());
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Subscription failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }    
      /**
      * Get subscription status
      */      
@@ -77,32 +30,12 @@ class SubscriptionService
                 'has_subscription' => $isOnActiveTrial, // Treat active trial as having subscription
                 'on_trial' => $isOnActiveTrial,
                 'trial_ends_at' => $user->trial_ends_at,
-                'source' => 'local'
-            ];
-        }
-
-        // Sprawdź najpierw lokalne subskrypcje
-        $localSubscription = $this->subscriptionRepository->findUserSubscription($user);
-        
-        // Check if user has active trial
-        $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
-        
-        // Jeśli mamy lokalną subskrypcję, użyj jej
-        if ($localSubscription && $localSubscription->active()) {
-            return [
-                'status' => $localSubscription->stripe_status,
-                'has_subscription' => true,
-                'on_trial' => $localSubscription->onTrial(),
-                'trial_ends_at' => $localSubscription->trial_ends_at,
-                'plan' => $localSubscription->name,
-                'ends_at' => $localSubscription->ends_at,
-                'canceled' => $localSubscription->canceled(),
-                'stripe_subscription_id' => $localSubscription->stripe_id,
+                'plan' => $isOnActiveTrial ? 'trial' : 'free',
                 'source' => 'local'
             ];
         }
         
-        // If user has active trial but no local subscription, treat as premium trial user
+        // If user has active trial, treat as premium trial user
         if ($isOnActiveTrial) {
             return [
                 'status' => 'trial',
@@ -114,10 +47,10 @@ class SubscriptionService
             ];
         }
 
-        // Jeśli nie ma lokalnej subskrypcji, sprawdź bezpośrednio w Stripe
+        // Check subscription status directly from Stripe
         return $this->getSubscriptionStatusFromStripe($user);
-    }
-
+    }    
+    
     /**
      * Get subscription status directly from Stripe API
      */
@@ -126,7 +59,7 @@ class SubscriptionService
         try {
             // Check if user has active trial first
             $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
-            
+
             if (!$user->stripe_id) {
                 return [
                     'status' => $isOnActiveTrial ? 'trial' : 'free',
@@ -136,8 +69,8 @@ class SubscriptionService
                     'source' => 'stripe_fallback'
                 ];
             }
-
-            // Pobierz subskrypcje ze Stripe
+            
+            // Pobierz subskrypcje ze Stripe (źródło prawdy)
             $subscriptions = \Stripe\Subscription::all([
                 'customer' => $user->stripe_id,
                 'status' => 'all',
@@ -184,21 +117,136 @@ class SubscriptionService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to get subscription status from Stripe: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'stripe_id' => $user->stripe_id,
-            ]);
+            // Check if fallback is enabled before proceeding
+            $fallbackEnabled = config('subscription.fallback.enabled', true);
+            $logFallbackEvents = config('subscription.fallback.log_fallback_events', true);
+            
+            if ($logFallbackEvents) {
+                Log::error('Failed to get subscription status from Stripe: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'stripe_id' => $user->stripe_id,
+                    'error' => $e->getMessage(),
+                    'fallback_enabled' => $fallbackEnabled
+                ]);
+            }
 
-            // Even on error, check for active trial
+            // Only fallback if enabled in configuration
+            if (!$fallbackEnabled) {
+                throw $e; // Re-throw the error if fallback is disabled
+            }
+
+            if ($logFallbackEvents) {
+                Log::info('Falling back to local database for subscription status', [
+                    'user_id' => $user->id,
+                    'stripe_id' => $user->stripe_id
+                ]);
+            }
+
+            return $this->getSubscriptionStatusFromLocalDatabase($user);
+        }
+    }
+
+    /**
+     * Get subscription status from local database (fallback method)
+     */
+    private function getSubscriptionStatusFromLocalDatabase(User $user): array
+    {
+        try {
+            // Check data age configuration
+            $maxDataAgeHours = config('subscription.fallback.max_local_data_age_hours', 24);
+            $logFallbackEvents = config('subscription.fallback.log_fallback_events', true);
+            
+            // Check if user has active trial first
+            $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
+
+            if (!$user->stripe_id) {
+                return [
+                    'status' => $isOnActiveTrial ? 'trial' : 'free',
+                    'has_subscription' => $isOnActiveTrial,
+                    'on_trial' => $isOnActiveTrial,
+                    'trial_ends_at' => $user->trial_ends_at,
+                    'source' => 'local_database'
+                ];
+            }
+
+            // Znajdź aktywną subskrypcję w lokalnej bazie danych
+            $activeSubscription = $user->subscriptions()
+                ->whereIn('stripe_status', ['active', 'trialing', 'past_due'])
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if (!$activeSubscription) {
+                return [
+                    'status' => $isOnActiveTrial ? 'trial' : 'free',
+                    'has_subscription' => $isOnActiveTrial,
+                    'on_trial' => $isOnActiveTrial,
+                    'trial_ends_at' => $user->trial_ends_at,
+                    'source' => 'local_database'
+                ];
+            }
+
+            // Check if local data is stale based on configuration
+            $dataAge = $activeSubscription->updated_at->diffInHours(now());
+            $isStale = $dataAge > $maxDataAgeHours;
+            
+            if ($isStale && $logFallbackEvents) {
+                Log::warning('Local subscription data is stale', [
+                    'user_id' => $user->id,
+                    'subscription_id' => $activeSubscription->stripe_id,
+                    'data_age_hours' => $dataAge,
+                    'max_age_hours' => $maxDataAgeHours
+                ]);
+            }
+
+            // Pobierz pierwszy item z subskrypcji dla informacji o planie
+            $subscriptionItem = $activeSubscription->items()->first();
+
+            $note = 'Data retrieved from local database due to Stripe API unavailability';
+            if ($isStale) {
+                $note .= " (Warning: Local data is {$dataAge} hours old, may be stale)";
+            }
+
+            return [
+                'status' => $this->mapStripeStatus($activeSubscription->stripe_status),
+                'has_subscription' => true,
+                'stripe_status' => $activeSubscription->stripe_status,
+                'stripe_subscription_id' => $activeSubscription->stripe_id,
+                'on_trial' => $activeSubscription->stripe_status === 'trialing',
+                'trial_ends_at' => $activeSubscription->trial_ends_at,
+                'current_period_start' => $activeSubscription->created_at, // Przybliżone, bo nie mamy current_period_start w lokalnej bazie
+                'current_period_end' => $activeSubscription->ends_at,
+                'cancel_at_period_end' => $activeSubscription->ends_at !== null,
+                'plan_name' => $subscriptionItem ? $subscriptionItem->stripe_price : null,
+                'plan_amount' => null, // Nie mamy tej informacji w lokalnej bazie
+                'plan_currency' => null, // Nie mamy tej informacji w lokalnej bazie  
+                'plan_interval' => null, // Nie mamy tej informacji w lokalnej bazie
+                'source' => 'local_database',
+                'note' => $note,
+                'data_age_hours' => $dataAge,
+                'is_stale' => $isStale
+            ];
+
+        } catch (\Exception $e) {
+            $logFallbackEvents = config('subscription.fallback.log_fallback_events', true);
+            
+            if ($logFallbackEvents) {
+                Log::error('Failed to get subscription status from local database: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'stripe_id' => $user->stripe_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Ostateczny fallback - sprawdź tylko lokalne trial
             $isOnActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
 
             return [
                 'status' => $isOnActiveTrial ? 'trial' : 'unknown',
-                'has_subscription' => $isOnActiveTrial, // Treat active trial as having subscription
-                'error' => 'Failed to retrieve subscription data',
+                'has_subscription' => $isOnActiveTrial,
+                'error' => 'Failed to retrieve subscription data from both Stripe and local database',
                 'on_trial' => $isOnActiveTrial,
                 'trial_ends_at' => $user->trial_ends_at,
-                'source' => 'error'
+                'source' => 'error_fallback'
             ];
         }
     }
@@ -218,67 +266,6 @@ class SubscriptionService
             'incomplete_expired' => 'expired',
             default => 'unknown'
         };
-    }
-    
-    /**
-     * Cancel subscription
-     */
-    public function cancelSubscription(User $user): bool
-    {
-        try {
-            if (!$this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You do not have an active subscription or trial');
-            }
-            
-            $subscription = $this->subscriptionRepository->findUserSubscription($user);
-            
-            // If user has a formal subscription, cancel it
-            if ($subscription) {
-                $this->subscriptionRepository->cancelSubscription($subscription);
-            }
-            
-            // If user is on trial without formal subscription, end the trial
-            if (!$subscription && $user->trial_ends_at && $user->trial_ends_at->isFuture()) {
-                $user->trial_ends_at = now();
-                $user->save();
-                
-                // Update role back to free, preserving admin if they have it
-                $roles = $user->hasRole('admin') ? ['admin', 'free'] : ['free'];
-                $this->userRepository->syncRoles($user, $roles);
-            }
-            
-            // Log activity
-            activity()->causedBy($user)->log('cancelled subscription');
-            
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Subscription cancellation failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Resume subscription
-     */
-    public function resumeSubscription(User $user): bool
-    {
-        try {
-            $subscription = $this->subscriptionRepository->findUserSubscription($user);
-            
-            if (!$subscription || !$subscription->canceled()) {
-                throw new \InvalidArgumentException('Subscription cannot be resumed');
-            }
-            
-            $this->subscriptionRepository->resumeSubscription($subscription);
-            
-            // Log activity
-            activity()->causedBy($user)->log('resumed subscription');
-            
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Subscription resume failed: ' . $e->getMessage());
-            throw $e;
-        }
     }
 
     /**
@@ -311,57 +298,6 @@ class SubscriptionService
             return true;
         } catch (\Exception $e) {
             Log::error('Trial start failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Update payment method
-     */
-    public function updatePaymentMethod(User $user, string $paymentMethod): bool
-    {
-        try {
-            $user->updateDefaultPaymentMethod($paymentMethod);
-            
-            // Log activity
-            activity()->causedBy($user)->log('updated payment method');
-            
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Payment method update failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Get invoice
-     */
-    public function getInvoice(User $user, string $invoiceId): array
-    {
-        try {
-            $invoice = $user->findInvoice($invoiceId);
-            
-            if (!$invoice) {
-                throw new \InvalidArgumentException('Invoice not found');
-            }
-            
-            return ['invoice' => $invoice];
-        } catch (\Exception $e) {
-            Log::error('Invoice retrieval failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * List invoices
-     */
-    public function listInvoices(User $user): array
-    {
-        try {
-            $invoices = $user->invoices();
-            return ['invoices' => $invoices];
-        } catch (\Exception $e) {
-            Log::error('Invoice listing failed: ' . $e->getMessage());
             throw $e;
         }
     }
