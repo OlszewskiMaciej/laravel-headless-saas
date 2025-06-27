@@ -4,21 +4,13 @@ namespace App\Modules\Subscription\Controllers;
 
 use App\Modules\Auth\Resources\UserResource;
 use App\Core\Traits\ApiResponse;
-use App\Modules\Subscription\Requests\GetInvoiceRequest;
-use App\Modules\Subscription\Requests\ListInvoicesRequest;
-use App\Modules\Subscription\Requests\SubscribeRequest;
-use App\Modules\Subscription\Requests\UpdatePaymentMethodRequest;
 use App\Modules\Subscription\Requests\CheckoutRequest;
 use App\Modules\Subscription\Requests\BillingPortalRequest;
-use App\Modules\Subscription\Resources\InvoiceCollection;
-use App\Modules\Subscription\Resources\InvoiceResource;
 use App\Modules\Subscription\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
-use Laravel\Cashier\Exceptions\IncompletePayment;
-use Symfony\Component\HttpFoundation\Response;
 
 class SubscriptionController extends Controller
 {
@@ -42,29 +34,6 @@ class SubscriptionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return $this->error('Failed to retrieve subscription information', 500);
-        }
-    }
-    
-    /**
-     * Cancel subscription
-     */
-    public function cancel(Request $request): JsonResponse
-    {
-        if (!$request->user()->can('cancel subscription')) {
-            return $this->error('Unauthorized to cancel subscription', 403);
-        }
-
-        try {
-            $this->subscriptionService->cancelSubscription($request->user());
-            return $this->success(null, 'Subscription has been cancelled');
-        } catch (\InvalidArgumentException $e) {
-            return $this->error($e->getMessage(), 400);
-        } catch (\Exception $e) {
-            Log::error('Subscription cancellation failed: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $this->error('Failed to cancel subscription', 500);
         }
     }
     

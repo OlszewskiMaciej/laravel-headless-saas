@@ -174,43 +174,6 @@ class SubscriptionService
             default => 'unknown'
         };
     }
-    
-    /**
-     * Cancel subscription
-     */
-    public function cancelSubscription(User $user): bool
-    {
-        try {
-            if (!$this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You do not have an active subscription or trial');
-            }
-            
-            $subscription = $this->subscriptionRepository->findUserSubscription($user);
-            
-            // If user has a formal subscription, cancel it
-            if ($subscription) {
-                $this->subscriptionRepository->cancelSubscription($subscription);
-            }
-            
-            // If user is on trial without formal subscription, end the trial
-            if (!$subscription && $user->trial_ends_at && $user->trial_ends_at->isFuture()) {
-                $user->trial_ends_at = now();
-                $user->save();
-                
-                // Update role back to free, preserving admin if they have it
-                $roles = $user->hasRole('admin') ? ['admin', 'free'] : ['free'];
-                $this->userRepository->syncRoles($user, $roles);
-            }
-            
-            // Log activity
-            activity()->causedBy($user)->log('cancelled subscription');
-            
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Subscription cancellation failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
 
     /**
      * Start trial
