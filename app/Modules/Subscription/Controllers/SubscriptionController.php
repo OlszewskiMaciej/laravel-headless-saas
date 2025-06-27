@@ -27,43 +27,6 @@ class SubscriptionController extends Controller
     public function __construct(
         private readonly SubscriptionService $subscriptionService
     ) {}
-
-    /**
-     * Subscribe to a plan
-     */
-    public function subscribe(SubscribeRequest $request): JsonResponse
-    {
-        if (!$request->user()->can('subscribe to plan')) {
-            return $this->error('Unauthorized to subscribe', 403);
-        }
-
-        try {
-            $result = $this->subscriptionService->subscribe(
-                $request->user(),
-                $request->validated()
-            );
-            
-            return $this->success(
-                new UserResource($result['user']), 
-                'Subscription created successfully'
-            );
-        } catch (IncompletePayment $exception) {
-            return $this->error(
-                'Incomplete payment, please confirm your payment', 
-                402, 
-                ['payment_intent' => $exception->payment->id]
-            );
-        } catch (\InvalidArgumentException $e) {
-            return $this->error($e->getMessage(), 422);
-        } catch (\Exception $e) {
-            Log::error('Subscription error: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
-                'plan' => $request->plan,
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $this->error('Failed to process subscription', 500);
-        }
-    }
     
     /**
      * Get current subscription

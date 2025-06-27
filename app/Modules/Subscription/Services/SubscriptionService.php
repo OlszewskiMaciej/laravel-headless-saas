@@ -17,51 +17,6 @@ class SubscriptionService
         private readonly UserRepositoryInterface $userRepository
     ) {}
 
-    /**
-     * Subscribe user to a plan
-     */
-    public function subscribe(User $user, array $data): array
-    {
-        try {
-            // Get plan details from config
-            $plans = config('subscription.plans');
-            $planName = $data['plan'];
-            
-            if (!isset($plans[$planName])) {
-                throw new \InvalidArgumentException('Invalid plan selected');
-            }
-            
-            $plan = $plans[$planName];
-            
-            if ($this->subscriptionRepository->isUserSubscribed($user)) {
-                throw new \InvalidArgumentException('You already have an active subscription or trial');
-            }
-
-            $subscription = $user->newSubscription($planName, $plan['stripe_id'])
-                ->create($data['payment_method'] ?? null);
-            
-            // Update user role - assign premium role (preserving admin if they have it)
-            $roles = $user->hasRole('admin') ? ['admin', 'premium'] : ['premium'];
-            $this->userRepository->syncRoles($user, $roles);
-            
-            // Log activity
-            activity()
-                ->causedBy($user)
-                ->withProperties(['plan' => $planName])
-                ->log('subscribed to plan');
-            
-            return [
-                'user' => $user->fresh(['roles']),
-                'subscription' => $subscription
-            ];
-        } catch (IncompletePayment $e) {
-            Log::error('Incomplete payment during subscription: ' . $e->getMessage());
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Subscription failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }    
      /**
      * Get subscription status
      */      
