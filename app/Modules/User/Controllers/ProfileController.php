@@ -8,7 +8,6 @@ use App\Modules\User\Requests\UpdateProfileRequest;
 use App\Modules\User\Services\ProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -26,10 +25,6 @@ class ProfileController extends BaseController
     public function show(Request $request): JsonResponse
     {
         try {
-            if (Gate::denies('view', $request->user())) {
-                return $this->error('Unauthorized to view profile', 403);
-            }
-
             return $this->success(new UserResource($request->user()));
         } catch (\Exception $e) {
             Log::error('Failed to get user profile: ' . $e->getMessage(), [
@@ -47,10 +42,6 @@ class ProfileController extends BaseController
     public function update(UpdateProfileRequest $request): JsonResponse
     {
         try {
-            if (Gate::denies('update', $request->user())) {
-                return $this->error('Unauthorized to update profile', 403);
-            }
-
             $user = $request->user();
             $validated = $request->validated();
 

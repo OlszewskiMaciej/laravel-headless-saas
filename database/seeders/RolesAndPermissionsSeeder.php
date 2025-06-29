@@ -18,16 +18,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Create permissions
         $permissions = [
-            // User permissions
-            'view own profile',
-            'update own profile',
-            
             // Subscription permissions
             'subscribe to plan',
-            'cancel subscription',
-            'resume subscription',
             'start trial',
-            'get invoice',
+            'access free features',
             'access premium features',
             
             // Admin permissions
@@ -66,33 +60,22 @@ class RolesAndPermissionsSeeder extends Seeder
         // Free role (after registration)
         $freeRole = Role::firstOrCreate(['name' => 'free']);
         $freeRole->givePermissionTo([
-            'view own profile', 
-            'update own profile',
+            'access free features',
             'subscribe to plan',
             'start trial',
-            'get invoice',
         ]);
         
         // Premium role (after subscription)        
         $premiumRole = Role::firstOrCreate(['name' => 'premium']);
         $premiumRole->givePermissionTo([
-            'view own profile',
-            'update own profile',
-            'cancel subscription',
-            'resume subscription',
-            'get invoice',
+            'access free features',
             'access premium features',
         ]);
         
         // Trial role (same permissions as premium except start trial)
         $trialRole = Role::firstOrCreate(['name' => 'trial']);
         $trialRole->givePermissionTo([
-            'view own profile',
-            'update own profile',
-            'get invoice',
-            'access premium features',
-            'subscribe to plan',
-            'get invoice',
+            'access free features',
             'access premium features',
         ]);
     }

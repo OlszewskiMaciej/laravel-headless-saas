@@ -7,6 +7,8 @@ use App\Models\SubscriptionItem;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 use Stripe\Stripe;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Model;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +31,9 @@ class AppServiceProvider extends ServiceProvider
         // Configure Cashier models
         Cashier::useSubscriptionModel(Subscription::class);
         Cashier::useSubscriptionItemModel(SubscriptionItem::class);
+        
+        Model::automaticallyEagerLoadRelationships();
+        Model::shouldBeStrict(! app()->isProduction());
+        DB::prohibitDestructiveCommands(app()->isProduction());
     }
 }
