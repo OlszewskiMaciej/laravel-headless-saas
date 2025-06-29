@@ -9,16 +9,6 @@ class UserPolicy
 {
     use HandlesAuthorization;
 
-    public function viewProfile(User $user): bool
-    {
-        return $user->can('view own profile');
-    }
-
-    public function updateProfile(User $user): bool
-    {
-        return $user->can('update own profile');
-    }
-
     public function viewUsers(User $user): bool
     {
         return $user->can('view users');
