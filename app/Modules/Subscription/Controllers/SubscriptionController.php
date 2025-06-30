@@ -63,22 +63,6 @@ class SubscriptionController extends Controller
             ]);
             return $this->error('Failed to start trial', 500);
         }
-        if ($user->hasRole('admin')) {
-            $user->syncRoles(['admin', 'trial']);
-        } else {
-            $user->syncRoles(['trial']);
-        }
-        
-        // Log activity
-        activity()
-            ->causedBy($user)
-            ->withProperties(['days' => $trialDays])
-            ->log('started trial');
-        
-        return $this->success(
-            new UserResource($user), 
-            "Your {$trialDays}-day trial has started"
-        );
     }
     
     /**
