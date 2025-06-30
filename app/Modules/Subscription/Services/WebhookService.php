@@ -22,7 +22,7 @@ class WebhookService
             // For testing environment, accept direct Event object
             $event = is_array($payload) ? Event::constructFrom($payload) : $payload;
             
-            $invoice = $event->data->object;
+            $invoice = $event['data']['object'];
 
             // Skip if this isn't a subscription invoice
             if (!isset($invoice->subscription)) {
@@ -80,7 +80,7 @@ class WebhookService
             // For testing environment, accept direct Event object
             $event = is_array($payload) ? Event::constructFrom($payload) : $payload;
             
-            $invoice = $event->data->object;
+            $invoice = $event['data']['object'];
 
             // Skip if this isn't a subscription invoice
             if (!isset($invoice->subscription)) {
