@@ -223,7 +223,6 @@ class ApiKeyServiceTest extends TestCase
     public function test_can_revoke_api_key(): void
     {
         $apiKey = new ApiKey([
-            'id' => 1,
             'name' => 'Test API Key',
             'key' => 'hashed-key-123',
             'service' => 'testing-service',
@@ -258,7 +257,6 @@ class ApiKeyServiceTest extends TestCase
     public function test_can_delete_api_key(): void
     {
         $apiKey = new ApiKey([
-            'id' => 1,
             'name' => 'Test API Key',
             'key' => 'hashed-key-123',
             'service' => 'testing-service',
