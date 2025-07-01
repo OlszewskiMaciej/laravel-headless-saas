@@ -18,6 +18,7 @@ A comprehensive, production-ready API for headless SaaS applications built with 
 -   **Trial Periods**: Configurable trial periods for new users
 -   **Invoice Management**: Automated invoice generation and retrieval
 -   **Webhook Handling**: Secure Stripe webhook processing
+-   **Fallback Mechanism**: Automatic fallback to local database when Stripe API is unavailable, ensuring service continuity
 
 ### 👨‍💼 Administration
 
@@ -155,6 +156,50 @@ The application uses a comprehensive database schema with the following main tab
     ```
     php artisan serve
     ```
+
+## 🔄 Subscription Fallback System
+
+The application includes a robust fallback mechanism for subscription data retrieval:
+
+### How It Works
+
+1. **Primary Source**: Stripe API is always used as the source of truth for subscription data
+2. **Automatic Sync**: A cron job regularly synchronizes subscription data from Stripe to the local database
+3. **Fallback Protection**: When Stripe API is unavailable, the system automatically falls back to local database
+
+### Fallback Scenarios
+
+The system uses local database fallback in the following situations:
+
+-   **Network Issues**: When the application cannot reach Stripe servers
+-   **API Rate Limits**: When Stripe API rate limits are exceeded
+-   **Service Outages**: During Stripe service interruptions
+-   **Timeout Errors**: When Stripe API responses are too slow
+
+### Sync Command
+
+To manually synchronize subscription data from Stripe:
+
+```bash
+# Sync all users' subscriptions
+php artisan subscriptions:sync
+
+# Sync specific user's subscription
+php artisan subscriptions:sync --user=123
+
+# Dry run to see what would be synced
+php artisan subscriptions:sync --dry-run
+
+# Sync only users with changes in last 7 days
+php artisan subscriptions:sync --days=7
+```
+
+### Benefits
+
+-   **High Availability**: Service continues even during Stripe outages
+-   **Better Performance**: Local fallback provides faster response times
+-   **Data Consistency**: Regular sync ensures local data stays current
+-   **Transparency**: Clear indication of data source in API responses
 
 ## API Key Authentication
 
