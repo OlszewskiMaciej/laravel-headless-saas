@@ -19,7 +19,6 @@ class RolesAndPermissionsSeeder extends Seeder
         // Create permissions
         $permissions = [
             // Subscription permissions
-            'subscribe to plan',
             'start trial',
             'access free features',
             'access premium features',
@@ -61,7 +60,6 @@ class RolesAndPermissionsSeeder extends Seeder
         $freeRole = Role::firstOrCreate(['name' => 'free']);
         $freeRole->givePermissionTo([
             'access free features',
-            'subscribe to plan',
             'start trial',
         ]);
         

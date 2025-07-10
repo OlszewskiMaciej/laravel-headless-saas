@@ -70,10 +70,6 @@ class SubscriptionController extends Controller
      */
     public function checkout(CheckoutRequest $request): JsonResponse
     {
-        if (!$request->user()->can('subscribe to plan')) {
-            return $this->error('Unauthorized to subscribe', 403);
-        }
-        
         if ($this->subscriptionService->getSubscriptionStatus($request->user())['has_subscription']) {
             return $this->error('You already have an active subscription or trial', 403);
         }
