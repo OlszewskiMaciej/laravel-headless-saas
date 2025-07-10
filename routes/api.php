@@ -60,7 +60,7 @@ Route::middleware(['api-key', 'auth:sanctum'])->group(function () {
         Route::post('start-trial', [SubscriptionController::class, 'startTrial'])->name('start-trial')->middleware('permission:start trial');
         
         // New Stripe Checkout and Billing Portal routes
-        Route::post('checkout', [SubscriptionController::class, 'checkout'])->name('checkout')->middleware('permission:subscribe to plan');
+        Route::post('checkout', [SubscriptionController::class, 'checkout'])->name('checkout');
         Route::post('billing-portal', [SubscriptionController::class, 'billingPortal'])->name('billing-portal');
     });
       // User routes
