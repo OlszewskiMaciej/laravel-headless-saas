@@ -274,6 +274,12 @@ class SubscriptionService
     public function startTrial(User $user): bool
     {
         try {
+            // Check if user already has an active subscription status
+            $subscriptionStatus = $this->getSubscriptionStatus($user);
+            if ($subscriptionStatus['status'] === 'active') {
+                throw new \InvalidArgumentException('You already have an active subscription');
+            }
+            
             if ($this->subscriptionRepository->isUserOnTrial($user) || $user->trial_ends_at !== null) {
                 throw new \InvalidArgumentException('You have already used your trial period');
             }
