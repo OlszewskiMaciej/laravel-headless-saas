@@ -1241,7 +1241,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                  "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/login",
@@ -1284,7 +1284,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                  "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/login",
@@ -1327,7 +1327,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                  "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password\"\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/api/auth/login",
