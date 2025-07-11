@@ -41,6 +41,11 @@ class PasswordResetService
     public function resetPassword(array $credentials): string
     {
         try {
+            // Ensure password_confirmation exists if not provided
+            if (!isset($credentials['password_confirmation']) && isset($credentials['password'])) {
+                $credentials['password_confirmation'] = $credentials['password'];
+            }
+            
             $status = Password::reset(
                 $credentials,
                 function ($user, $password) {
