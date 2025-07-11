@@ -20,8 +20,8 @@ class AdminUserCreationTest extends TestCase
         $userData = [
             'name' => 'Test User',
             'email' => 'testuser@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'password',
+            'password_confirmation' => 'password',
             'roles' => ['free'],
         ];
 
@@ -60,8 +60,8 @@ class AdminUserCreationTest extends TestCase
         $userData = [
             'name' => 'Test User',
             'email' => 'testuser@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'password',
+            'password_confirmation' => 'password',
             'roles' => ['free'],
         ];
 
@@ -84,8 +84,8 @@ class AdminUserCreationTest extends TestCase
         $userData = [
             'name' => 'Test User',
             'email' => 'existing@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'password',
+            'password_confirmation' => 'password',
             'roles' => ['free'],
         ];
 
@@ -106,8 +106,8 @@ class AdminUserCreationTest extends TestCase
         $userData = [
             'name' => 'Test User',
             'email' => 'testuser@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'password',
+            'password_confirmation' => 'password',
             'roles' => ['nonexistent-role'],
         ];
 

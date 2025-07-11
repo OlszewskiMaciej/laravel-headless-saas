@@ -66,8 +66,8 @@ class ProfileUpdateTest extends TestCase
         $response = $this->actingAs($user)
             ->putJson('/api/user/profile', [
                 'current_password' => 'current-password',
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
             ]);
 
         $response->assertStatus(200)
@@ -78,7 +78,7 @@ class ProfileUpdateTest extends TestCase
 
         // Verify the password was actually changed
         $user->refresh();
-        $this->assertTrue(Hash::check('new-password123', $user->password));
+        $this->assertTrue(Hash::check('new-password', $user->password));
         $this->assertFalse(Hash::check('current-password', $user->password));
     }
 
@@ -91,8 +91,8 @@ class ProfileUpdateTest extends TestCase
 
         $response = $this->actingAs($user)
             ->putJson('/api/user/profile', [
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
             ]);
 
         $response->assertStatus(422)
@@ -111,8 +111,8 @@ class ProfileUpdateTest extends TestCase
         $response = $this->actingAs($user)
             ->putJson('/api/user/profile', [
                 'current_password' => 'wrong-current-password',
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
             ]);
 
         $response->assertStatus(422)
@@ -121,7 +121,7 @@ class ProfileUpdateTest extends TestCase
         // Verify the password was not changed
         $user->refresh();
         $this->assertTrue(Hash::check('real-current-password', $user->password));
-        $this->assertFalse(Hash::check('new-password123', $user->password));
+        $this->assertFalse(Hash::check('new-password', $user->password));
     }
 
     /**
@@ -136,7 +136,7 @@ class ProfileUpdateTest extends TestCase
         $response = $this->actingAs($user)
             ->putJson('/api/user/profile', [
                 'current_password' => 'current-password',
-                'password' => 'new-password123',
+                'password' => 'new-password',
                 'password_confirmation' => 'different-password',
             ]);
 
@@ -166,8 +166,8 @@ class ProfileUpdateTest extends TestCase
                 'name' => 'Updated Name',
                 'email' => 'updated@example.com',
                 'current_password' => 'current-password',
-                'password' => 'new-password123',
-                'password_confirmation' => 'new-password123',
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
             ]);
 
         $response->assertStatus(200)
@@ -184,7 +184,7 @@ class ProfileUpdateTest extends TestCase
         $user->refresh();
         $this->assertEquals('Updated Name', $user->name);
         $this->assertEquals('updated@example.com', $user->email);
-        $this->assertTrue(Hash::check('new-password123', $user->password));
+        $this->assertTrue(Hash::check('new-password', $user->password));
     }
 
     public function test_users_can_get_their_profile(): void
