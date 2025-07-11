@@ -19,7 +19,8 @@ class SyncSubscriptionsCommand extends Command
     protected $signature = 'subscriptions:sync
                             {--days=2 : Number of days to look back for changes}
                             {--user= : Specific user ID to sync subscriptions for}
-                            {--dry-run : Show what would be done without making changes}';
+                            {--dry-run : Show what would be done without making changes}
+                            {--sync-roles : Also sync user roles based on subscription status}';
 
     /**
      * The console command description.
@@ -141,6 +142,11 @@ class SyncSubscriptionsCommand extends Command
                 if ($this->getOutput()->isVerbose()) {
                     $this->line("  Updated last sync timestamp for user {$user->id}");
                 }
+            }
+            
+            // Sync user role if requested
+            if ($this->option('sync-roles')) {
+                $this->syncUserRole($user, $isDryRun);
             }
         } catch (\Exception $e) {
             if ($this->getOutput()->isVerbose()) {
@@ -265,5 +271,92 @@ class SyncSubscriptionsCommand extends Command
                 $this->line("  Could not retrieve payment method: {$e->getMessage()}");
             }
         }
+    }
+    
+    /**
+     * Sync user role based on subscription status
+     */
+    private function syncUserRole(User $user, bool $isDryRun): void
+    {
+        $currentRoles = $user->roles->pluck('name')->toArray();
+        
+        // Skip admin users - don't change their roles
+        if (in_array('admin', $currentRoles)) {
+            if ($this->getOutput()->isVerbose()) {
+                $this->line("  Skipping admin user");
+            }
+            return;
+        }
+        
+        $expectedRole = $this->determineExpectedRole($user);
+        
+        // Skip if user already has the correct role
+        if (in_array($expectedRole, $currentRoles) && count($currentRoles) === 1) {
+            if ($this->getOutput()->isVerbose()) {
+                $this->line("  User already has correct role: {$expectedRole}");
+            }
+            return;
+        }
+
+        if ($isDryRun) {
+            $this->line("  Would change role from [" . implode(', ', $currentRoles) . "] to [{$expectedRole}] for user {$user->email}");
+        } else {
+            // Remove all current roles and assign the correct one
+            $user->syncRoles([$expectedRole]);
+            
+            if ($this->getOutput()->isVerbose()) {
+                $this->line("  Updated role from [" . implode(', ', $currentRoles) . "] to [{$expectedRole}] for user {$user->email}");
+            }
+            
+            Log::info('User role synchronized during subscription sync', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'old_roles' => $currentRoles,
+                'new_role' => $expectedRole
+            ]);
+        }
+    }
+
+    /**
+     * Determine the expected role for a user based on their subscription status
+     */
+    private function determineExpectedRole(User $user): string
+    {
+        // Check if user has an active subscription
+        $activeSubscription = $user->subscriptions()
+            ->where('stripe_status', 'active')
+            ->first();
+
+        if ($activeSubscription) {
+            return 'premium';
+        }
+
+        // Check if user is on trial
+        if ($user->onTrial()) {
+            return 'trial';
+        }
+
+        // Check if user has any subscription with trialing status
+        $trialSubscription = $user->subscriptions()
+            ->where('stripe_status', 'trialing')
+            ->first();
+
+        if ($trialSubscription) {
+            return 'trial';
+        }
+
+        // Check if user has canceled subscription but still within grace period
+        $canceledSubscription = $user->subscriptions()
+            ->where('stripe_status', 'canceled')
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '>', Carbon::now())
+            ->first();
+
+        if ($canceledSubscription) {
+            return 'premium';
+        }
+
+        // Default to free role
+        return 'free';
     }
 }

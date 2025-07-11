@@ -22,10 +22,10 @@ Schedule::command('subscription:check-expired-trials')
         Log::error('Expired trials check command failed');
     });
 
-// Sync subscription data from Stripe to local database
-Schedule::command('subscriptions:sync --days=2')
+// Sync subscription data from Stripe to local database and update user roles
+Schedule::command('subscriptions:sync --days=1 --sync-roles')
     ->hourly()
-    ->description('Synchronize Stripe subscription data with local database')
+    ->description('Synchronize Stripe subscription data with local database and update user roles')
     ->onSuccess(function () {
         Log::info('Subscription sync completed successfully');
     })
