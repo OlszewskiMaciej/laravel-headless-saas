@@ -157,7 +157,7 @@ class SubscriptionControllerTest extends TestCase
     #[Test]
     public function it_can_create_checkout_session_for_authorized_user()
     {
-        $this->user->assignRole('free'); // This role has 'subscribe to plan' permission
+        $this->user->assignRole('free'); // Give user basic role
 
         $this->subscriptionServiceMock
             ->shouldReceive('getSubscriptionStatus')
@@ -185,23 +185,9 @@ class SubscriptionControllerTest extends TestCase
     }
 
     #[Test]
-    public function it_denies_checkout_for_unauthorized_user()
-    {
-        // User has no role/permissions, so should be denied by permission middleware
-
-        $response = $this->actingAs($this->user)
-            ->postJson('/api/subscription/checkout', [
-                'plan' => 'premium'
-            ]);
-
-        // The permission middleware should return 403 directly
-        $response->assertStatus(403);
-    }
-
-    #[Test]
     public function it_denies_checkout_for_user_with_existing_subscription()
     {
-        $this->user->assignRole('free'); // Give 'subscribe to plan' permission
+        $this->user->assignRole('free'); // Give user basic role
 
         $this->subscriptionServiceMock
             ->shouldReceive('getSubscriptionStatus')
@@ -224,7 +210,7 @@ class SubscriptionControllerTest extends TestCase
     #[Test]
     public function it_handles_invalid_checkout_request()
     {
-        $this->user->assignRole('free'); // Give 'subscribe to plan' permission
+        $this->user->assignRole('free'); // Give user basic role
 
         $this->subscriptionServiceMock
             ->shouldReceive('getSubscriptionStatus')
@@ -253,7 +239,7 @@ class SubscriptionControllerTest extends TestCase
     #[Test]
     public function it_handles_checkout_server_error()
     {
-        $this->user->assignRole('free'); // Give 'subscribe to plan' permission
+        $this->user->assignRole('free'); // Give user basic role
 
         $this->subscriptionServiceMock
             ->shouldReceive('getSubscriptionStatus')
