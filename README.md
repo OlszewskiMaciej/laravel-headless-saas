@@ -15,6 +15,7 @@ A comprehensive, production-ready API for headless SaaS applications built with 
 
 -   **Stripe Integration**: Full subscription lifecycle management with Laravel Cashier
 -   **Multiple Plans**: Support for various subscription tiers
+-   **Multi-Currency Support**: Full support for multiple currencies (PLN, USD, EUR) with automatic currency-specific pricing
 -   **Trial Periods**: Configurable trial periods for new users
 -   **Invoice Management**: Automated invoice generation and retrieval
 -   **Webhook Handling**: Secure Stripe webhook processing
@@ -140,22 +141,76 @@ The application uses a comprehensive database schema with the following main tab
     ```
     STRIPE_KEY=pk_test_your_stripe_publishable_key_here
     STRIPE_SECRET=sk_test_your_stripe_secret_key_here
-    STRIPE_MONTHLY_PLAN_ID=price_your_monthly_plan_id_here
-    STRIPE_ANNUAL_PLAN_ID=price_your_annual_plan_id_here
+
+    # Monthly plan price IDs for different currencies
+    STRIPE_MONTHLY_PLAN_PLN_ID=price_your_monthly_plan_pln_id_here
+    STRIPE_MONTHLY_PLAN_USD_ID=price_your_monthly_plan_usd_id_here
+    STRIPE_MONTHLY_PLAN_EUR_ID=price_your_monthly_plan_eur_id_here
+
+    # Annual plan price IDs for different currencies
+    STRIPE_ANNUAL_PLAN_PLN_ID=price_your_annual_plan_pln_id_here
+    STRIPE_ANNUAL_PLAN_USD_ID=price_your_annual_plan_usd_id_here
+    STRIPE_ANNUAL_PLAN_EUR_ID=price_your_annual_plan_eur_id_here
+
     STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
     ```
 
     **Note:**
 
     - Get your Stripe API keys from your [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
-    - Create subscription plans in Stripe and use their price IDs
+    - Create subscription plans in Stripe for each supported currency (PLN, USD, EUR) and use their price IDs
     - Set up webhook endpoints in Stripe and use the webhook secret
+    - The application supports multiple currencies - configure price IDs for each currency you want to support
     - Optionally modify configuration files in the `config/` folder (e.g., `config/subscription.php`) to customize subscription behavior
 
 7. Start the development server:
     ```
     php artisan serve
     ```
+
+## 💰 Multi-Currency Support
+
+The application provides comprehensive multi-currency support for subscription management:
+
+### Supported Currencies
+
+-   **PLN (Polish Złoty)** - Default currency with symbol: zł
+-   **USD (US Dollar)** - Symbol: $
+-   **EUR (Euro)** - Symbol: €
+
+### Currency Configuration
+
+Each subscription plan can be configured with different pricing for each supported currency:
+
+```php
+// Example from config/subscription.php
+'plans' => [
+    'monthly' => [
+        'name' => 'Monthly Plan',
+        'currencies' => [
+            'PLN' => ['price' => 10, 'stripe_id' => 'price_monthly_pln'],
+            'USD' => ['price' => 10, 'stripe_id' => 'price_monthly_usd'],
+            'EUR' => ['price' => 10, 'stripe_id' => 'price_monthly_eur'],
+        ],
+    ],
+],
+```
+
+### How It Works
+
+1. **Stripe Integration**: Each currency requires a separate price ID in Stripe
+2. **Dynamic Pricing**: API automatically serves the correct price based on user's currency preference
+3. **Flexible Configuration**: Add or remove currencies by modifying the configuration file
+4. **Consistent Experience**: All subscription operations (creation, updates, cancellations) work seamlessly across all currencies
+
+### Adding New Currencies
+
+To add support for a new currency:
+
+1. Create the corresponding price in Stripe for each plan
+2. Add the currency configuration to `config/subscription.php`
+3. Add the Stripe price IDs to your `.env` file
+4. The API will automatically support the new currency
 
 ## 🔄 Subscription Fallback System
 
@@ -192,6 +247,45 @@ php artisan subscriptions:sync --dry-run
 
 # Sync only users with changes in last 7 days
 php artisan subscriptions:sync --days=7
+
+# Sync subscriptions and automatically update user roles based on subscription status
+php artisan subscriptions:sync --sync-roles
+
+# Combine options for comprehensive sync with role updates
+php artisan subscriptions:sync --sync-roles --days=7
+```
+
+### Role Synchronization
+
+The `--sync-roles` option provides automatic role management based on subscription status:
+
+-   **Premium Role**: Assigned to users with active subscriptions
+-   **Trial Role**: Assigned to users currently on trial period
+-   **Free Role**: Assigned to users without active subscriptions or trials
+-   **Admin Protection**: Admin users are never affected by role synchronization
+
+#### How Role Sync Works
+
+1. **Subscription Analysis**: Checks each user's current subscription status in Stripe
+2. **Role Determination**: Determines appropriate role based on subscription state:
+    - Active subscription → `premium` role
+    - Trial period → `trial` role
+    - Canceled but within grace period → `premium` role
+    - No active subscription → `free` role
+3. **Safe Updates**: Admin users are automatically skipped to prevent accidental role changes
+4. **Audit Trail**: All role changes are logged for compliance and monitoring
+
+#### Example Usage Scenarios
+
+```bash
+# Daily sync with role updates (recommended for automated tasks)
+php artisan subscriptions:sync --sync-roles --days=1
+
+# Emergency sync for specific user with role correction
+php artisan subscriptions:sync --user=123 --sync-roles
+
+# Preview what role changes would be made
+php artisan subscriptions:sync --dry-run --sync-roles
 ```
 
 ### Benefits

@@ -252,6 +252,239 @@
       "description": "Subscription management endpoints",
       "item": [
         {
+          "name": "Get Available Currencies",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/currencies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "currencies"
+              ]
+            },
+            "description": "Get available currencies for subscriptions (PLN, USD, EUR)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Plans",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/plans?currency={{currency}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "plans"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}",
+                  "description": "Currency code (PLN, USD, EUR)"
+                }
+              ]
+            },
+            "description": "Get available plans for a specific currency"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Plans (PLN)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/plans?currency=PLN",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "plans"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "PLN",
+                  "description": "Polish Złoty"
+                }
+              ]
+            },
+            "description": "Get available plans in Polish Złoty (PLN)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Plans (USD)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/plans?currency=USD",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "plans"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "USD",
+                  "description": "US Dollar"
+                }
+              ]
+            },
+            "description": "Get available plans in US Dollar (USD)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Plans (EUR)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/plans?currency=EUR",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "plans"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "EUR",
+                  "description": "Euro"
+                }
+              ]
+            },
+            "description": "Get available plans in Euro (EUR)"
+          },
+          "response": []
+        },
+        {
           "name": "Start Trial",
           "request": {
             "auth": {
@@ -365,7 +598,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"plan\": \"monthly\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+              "raw": "{\n    \"plan\": \"{{plan}}\",\n    \"currency\": \"{{currency}}\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/subscription/checkout",
@@ -378,7 +611,307 @@
                 "checkout"
               ]
             },
-            "description": "Create a Stripe Checkout session for subscription"
+            "description": "Create a Stripe Checkout session for subscription with currency support"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session (Monthly PLN)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan\": \"monthly\",\n    \"currency\": \"PLN\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "description": "Create a Stripe Checkout session for monthly subscription in Polish Złoty (49 zł/month)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session (Monthly USD)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan\": \"monthly\",\n    \"currency\": \"USD\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "description": "Create a Stripe Checkout session for monthly subscription in US Dollar ($12/month)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session (Monthly EUR)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan\": \"monthly\",\n    \"currency\": \"EUR\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "description": "Create a Stripe Checkout session for monthly subscription in Euro (€11/month)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session (Annual PLN)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan\": \"annual\",\n    \"currency\": \"PLN\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "description": "Create a Stripe Checkout session for annual subscription in Polish Złoty (490 zł/year)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session (Annual USD)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan\": \"annual\",\n    \"currency\": \"USD\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "description": "Create a Stripe Checkout session for annual subscription in US Dollar ($120/year)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session (Annual EUR)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-API-KEY",
+                "value": "{{api_key_test}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan\": \"annual\",\n    \"currency\": \"EUR\",\n    \"success_url\": \"{{frontend_url}}/subscription/success\",\n    \"cancel_url\": \"{{frontend_url}}/subscription/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "checkout"
+              ]
+            },
+            "description": "Create a Stripe Checkout session for annual subscription in Euro (€110/year)"
           },
           "response": []
         },
@@ -1785,25 +2318,5 @@
         "type": "string"
       }
     ]
-  },
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          ""
-        ]
-      }
-    }
-  ]
+  }
 }

@@ -62,14 +62,18 @@ Route::middleware(['api-key', 'auth:sanctum'])->group(function () {
         // New Stripe Checkout and Billing Portal routes
         Route::post('checkout', [SubscriptionController::class, 'checkout'])->name('checkout');
         Route::post('billing-portal', [SubscriptionController::class, 'billingPortal'])->name('billing-portal');
+        
+        // Currency and plan information routes
+        Route::get('currencies', [SubscriptionController::class, 'currencies'])->name('currencies');
+        Route::get('plans', [SubscriptionController::class, 'plans'])->name('plans');
     });
       // User routes
     Route::prefix('user')->name('user.')->group(function () {
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
     });
-      // Admin routes
-
+     
+    // Admin routes
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:view users');
         Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:create users');
