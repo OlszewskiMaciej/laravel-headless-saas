@@ -314,6 +314,9 @@ class SubscriptionService
     public function createCheckoutSession(User $user, array $data): array
     {
         try {
+            // Get default currency if not specified
+            $currency = $data['currency'] ?? $this->getDefaultCurrency();
+            
             // Validate plan if provided
             if (isset($data['plan'])) {
                 $plans = config('subscription.plans');
@@ -324,6 +327,13 @@ class SubscriptionService
                 }
                 
                 $plan = $plans[$planName];
+                
+                // Validate currency for the plan
+                if (!isset($plan['currencies'][$currency])) {
+                    throw new \InvalidArgumentException("Currency '{$currency}' is not supported for plan '{$planName}'");
+                }
+                
+                $planCurrency = $plan['currencies'][$currency];
             }
             
             // Check if user is subscribing to a plan or starting a trial
@@ -339,12 +349,13 @@ class SubscriptionService
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
                 'mode' => $mode,
+                'currency' => strtolower($currency),
             ];
             
             // For subscription mode, add line items based on the selected plan
             if ($mode === 'subscription' && isset($data['plan'])) {
                 $checkoutParams['line_items'] = [[
-                    'price' => $plan['stripe_id'],
+                    'price' => $planCurrency['stripe_id'],
                     'quantity' => 1,
                 ]];
             }
@@ -364,6 +375,7 @@ class SubscriptionService
                 ->causedBy($user)
                 ->withProperties([
                     'plan' => $data['plan'] ?? null,
+                    'currency' => $currency,
                     'mode' => $mode,
                     'session_id' => $session->id,
                 ])
@@ -372,6 +384,7 @@ class SubscriptionService
             return [
                 'url' => $session->url,
                 'session_id' => $session->id,
+                'currency' => $currency,
             ];
         } catch (\Exception $e) {
             Log::error('Failed to create Checkout session: ' . $e->getMessage(), [
@@ -438,5 +451,72 @@ class SubscriptionService
         ]);
         
         return $customer->id;
+    }
+    
+    /**
+     * Get default currency from configuration
+     */
+    protected function getDefaultCurrency(): string
+    {
+        $currencies = config('subscription.currencies', []);
+        
+        foreach ($currencies as $code => $config) {
+            if ($config['default'] ?? false) {
+                return $code;
+            }
+        }
+        
+        // Fallback to first currency if no default is set
+        return array_key_first($currencies) ?? 'PLN';
+    }
+    
+    /**
+     * Get available currencies
+     */
+    public function getAvailableCurrencies(): array
+    {
+        return config('subscription.currencies', []);
+    }
+    
+    /**
+     * Get available plans with currency information
+     */
+    public function getAvailablePlans(?string $currency = null): array
+    {
+        $plans = config('subscription.plans', []);
+        $currency = $currency ?? $this->getDefaultCurrency();
+        
+        $result = [];
+        foreach ($plans as $planKey => $plan) {
+            if (isset($plan['currencies'][$currency])) {
+                $result[$planKey] = [
+                    'name' => $plan['name'],
+                    'interval' => $plan['interval'],
+                    'price' => $plan['currencies'][$currency]['price'],
+                    'currency' => $currency,
+                    'stripe_id' => $plan['currencies'][$currency]['stripe_id'],
+                ];
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Validate currency code
+     */
+    protected function validateCurrency(string $currency): bool
+    {
+        $supportedCurrencies = array_keys(config('subscription.currencies', []));
+        return in_array($currency, $supportedCurrencies);
+    }
+    
+    /**
+     * Get currency information
+     */
+    public function getCurrencyInfo(string $currency): ?array
+    {
+        $currencies = config('subscription.currencies', []);
+        return $currencies[$currency] ?? null;
     }
 }

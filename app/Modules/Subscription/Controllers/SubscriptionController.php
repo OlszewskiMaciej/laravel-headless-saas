@@ -115,4 +115,38 @@ class SubscriptionController extends Controller
             return $this->error('Failed to create billing portal session', 500);
         }
     }
+    
+    /**
+     * Get available currencies
+     */
+    public function currencies(Request $request): JsonResponse
+    {
+        try {
+            $currencies = $this->subscriptionService->getAvailableCurrencies();
+            return $this->success($currencies, 'Available currencies retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error('Failed to get available currencies: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to retrieve available currencies', 500);
+        }
+    }
+    
+    /**
+     * Get available plans
+     */
+    public function plans(Request $request): JsonResponse
+    {
+        try {
+            $currency = $request->get('currency');
+            $plans = $this->subscriptionService->getAvailablePlans($currency);
+            return $this->success($plans, 'Available plans retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error('Failed to get available plans: ' . $e->getMessage(), [
+                'currency' => $request->get('currency'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->error('Failed to retrieve available plans', 500);
+        }
+    }
 }
