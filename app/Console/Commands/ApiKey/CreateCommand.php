@@ -1,13 +1,11 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\ApiKey;
 
-use App\Models\ApiKey;
+use App\Console\Commands\BaseCommand;
 use App\Services\ApiKeyService;
-use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
 
-class CreateApiKey extends Command
+class CreateCommand extends BaseCommand
 {
     /**
      * The name and signature of the console command.
@@ -39,9 +37,25 @@ class CreateApiKey extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
-        // Get or prompt for required options
+        try {
+            $keyData = $this->gatherKeyData();
+            $result = $this->createApiKey($keyData);
+            $this->displaySuccess($result);
+            
+            return self::SUCCESS;
+        } catch (\Exception $e) {
+            $this->error("Failed to create API key: {$e->getMessage()}");
+            return self::FAILURE;
+        }
+    }
+
+    /**
+     * Gather API key data from options or prompts
+     */
+    private function gatherKeyData(): array
+    {
         $name = $this->option('name') ?: $this->ask('Name for the API key');
         $service = $this->option('service') ?: $this->anticipate(
             'Service the API key is for',
@@ -54,36 +68,59 @@ class CreateApiKey extends Command
         );
         $description = $this->option('description') ?: $this->ask('Description (optional)', null);
         
-        // Handle expiration
-        $expiresAt = null;
+        return [
+            'name' => $name,
+            'service' => $service,
+            'environment' => $environment,
+            'description' => $description,
+            'expires_at' => $this->determineExpiration()
+        ];
+    }
+
+    /**
+     * Determine expiration date for the API key
+     */
+    private function determineExpiration(): ?\Carbon\Carbon
+    {
         $expires = $this->option('expires');
+        
         if ($expires === null) {
             $shouldExpire = $this->confirm('Should the API key expire?', false);
             if ($shouldExpire) {
                 $days = $this->ask('Days until expiration', 365);
-                $expiresAt = now()->addDays((int)$days);
+                return now()->addDays((int)$days);
             }
-        } elseif ((int)$expires > 0) {
-            $expiresAt = now()->addDays((int)$expires);
+            return null;
         }
+        
+        return (int)$expires > 0 ? now()->addDays((int)$expires) : null;
+    }
 
-        // Create the API key
-        $result = $this->apiKeyService->createKey(
-            $name,
-            $service,
-            $environment,
-            $description,
-            $expiresAt
+    /**
+     * Create the API key
+     */
+    private function createApiKey(array $keyData): array
+    {
+        return $this->apiKeyService->createKey(
+            $keyData['name'],
+            $keyData['service'],
+            $keyData['environment'],
+            $keyData['description'],
+            $keyData['expires_at']
         );
+    }
 
-        // Display the result
-        $this->info('API key created successfully!');
-        $this->warn('Please store this API key safely, as it won\'t be displayed again:');
+    /**
+     * Display success message and key details
+     */
+    private function displaySuccess(array $result): void
+    {
+        $this->success('API key created successfully!');
+        $this->warning('Please store this API key safely, as it won\'t be displayed again:');
         $this->newLine();
-        $this->line($result['plain_text_key']);
+        $this->line('<fg=yellow>' . $result['plain_text_key'] . '</>');
         $this->newLine();
         
-        // Display key details
         $this->table(['Property', 'Value'], [
             ['ID', $result['api_key']->id],
             ['Name', $result['api_key']->name],
@@ -92,7 +129,5 @@ class CreateApiKey extends Command
             ['Expires At', $result['api_key']->expires_at ? $result['api_key']->expires_at->format('Y-m-d H:i:s') : 'Never'],
             ['Created At', $result['api_key']->created_at->format('Y-m-d H:i:s')],
         ]);
-
-        return Command::SUCCESS;
     }
 }
