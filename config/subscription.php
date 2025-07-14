@@ -17,15 +17,15 @@ return [
             'currencies' => [
                 'PLN' => [
                     'stripe_id' => env('STRIPE_MONTHLY_PLAN_PLN_ID', 'price_monthly_pln'),
-                    'price' => 10,
+                    'fallback_price' => 10, // Used only when Stripe API is unavailable
                 ],
                 'USD' => [
                     'stripe_id' => env('STRIPE_MONTHLY_PLAN_USD_ID', 'price_monthly_usd'),
-                    'price' => 10,
+                    'fallback_price' => 10, // Used only when Stripe API is unavailable
                 ],
                 'EUR' => [
                     'stripe_id' => env('STRIPE_MONTHLY_PLAN_EUR_ID', 'price_monthly_eur'),
-                    'price' => 10,
+                    'fallback_price' => 10, // Used only when Stripe API is unavailable
                 ],
             ],
         ],
@@ -35,18 +35,44 @@ return [
             'currencies' => [
                 'PLN' => [
                     'stripe_id' => env('STRIPE_ANNUAL_PLAN_PLN_ID', 'price_annual_pln'),
-                    'price' => 100,
+                    'fallback_price' => 100, // Used only when Stripe API is unavailable
                 ],
                 'USD' => [
                     'stripe_id' => env('STRIPE_ANNUAL_PLAN_USD_ID', 'price_annual_usd'),
-                    'price' => 100,
+                    'fallback_price' => 100, // Used only when Stripe API is unavailable
                 ],
                 'EUR' => [
                     'stripe_id' => env('STRIPE_ANNUAL_PLAN_EUR_ID', 'price_annual_eur'),
-                    'price' => 100,
+                    'fallback_price' => 100, // Used only when Stripe API is unavailable
                 ],
             ],
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pricing Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for how prices are retrieved and displayed.
+    |
+    */
+    
+    'pricing' => [
+        /*
+        | Fetch prices from Stripe API instead of using local configuration
+        */
+        'use_stripe_api' => env('SUBSCRIPTION_USE_STRIPE_API', true),
+
+        /*
+        | Cache duration for Stripe price data (in seconds)
+        */
+        'cache_duration' => env('SUBSCRIPTION_PRICE_CACHE_DURATION', 3600),
+
+        /*
+        | Whether to log pricing fallbacks
+        */
+        'log_pricing_fallbacks' => env('SUBSCRIPTION_LOG_PRICING_FALLBACKS', true),
     ],
 
     /*

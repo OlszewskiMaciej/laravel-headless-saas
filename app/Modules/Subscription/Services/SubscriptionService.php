@@ -489,17 +489,57 @@ class SubscriptionService
         $result = [];
         foreach ($plans as $planKey => $plan) {
             if (isset($plan['currencies'][$currency])) {
-                $result[$planKey] = [
+                $planData = [
                     'name' => $plan['name'],
                     'interval' => $plan['interval'],
-                    'price' => $plan['currencies'][$currency]['price'],
                     'currency' => $currency,
                     'stripe_id' => $plan['currencies'][$currency]['stripe_id'],
                 ];
+
+                // Get price from Stripe API or use fallback
+                if (config('subscription.pricing.use_stripe_api', true)) {
+                    $stripePrice = $this->getStripePriceInfo($plan['currencies'][$currency]['stripe_id']);
+                    $planData['price'] = $stripePrice['amount'] ?? $plan['currencies'][$currency]['fallback_price'];
+                    $planData['source'] = $stripePrice['source'] ?? 'fallback';
+                } else {
+                    $planData['price'] = $plan['currencies'][$currency]['fallback_price'];
+                    $planData['source'] = 'config';
+                }
+
+                $result[$planKey] = $planData;
             }
         }
         
         return $result;
+    }
+    
+    /**
+     * Get price information from Stripe API with caching
+     */
+    private function getStripePriceInfo(string $priceId): array
+    {
+        $cacheKey = "stripe_price_{$priceId}";
+        $cacheTime = config('subscription.pricing.cache_duration', 3600);
+        
+        return cache()->remember($cacheKey, $cacheTime, function() use ($priceId) {
+            try {
+                $stripe = new \Stripe\StripeClient(config('cashier.secret'));
+                $price = $stripe->prices->retrieve($priceId);
+                
+                return [
+                    'amount' => $price->unit_amount / 100,
+                    'currency' => strtoupper($price->currency),
+                    'source' => 'stripe'
+                ];
+            } catch (\Exception $e) {
+                if (config('subscription.pricing.log_pricing_fallbacks', true)) {
+                    Log::warning("Failed to retrieve Stripe price {$priceId}: " . $e->getMessage());
+                }
+                return [
+                    'source' => 'fallback'
+                ];
+            }
+        });
     }
     
     /**

@@ -23,7 +23,7 @@ Schedule::command('subscription:check-expired-trials')
     });
 
 // Sync subscription data from Stripe to local database and update user roles
-Schedule::command('subscriptions:sync --days=1 --sync-roles')
+Schedule::command('subscription:sync --days=1 --sync-roles')
     ->hourly()
     ->description('Synchronize Stripe subscription data with local database and update user roles')
     ->onSuccess(function () {
