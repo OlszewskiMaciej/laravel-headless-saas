@@ -59,14 +59,14 @@ class SyncCommand extends BaseCommand
     /**
      * Sync subscriptions for a specific user
      */
-    private function syncSpecificUser(string $userId): int
+    private function syncSpecificUser(string $userUuid): int
     {
-        $user = User::findOrFail($userId);
-        $this->info("Syncing subscriptions for user: {$user->id} ({$user->email})");
+        $user = User::findOrFail($userUuid);
+        $this->info("Syncing subscriptions for user: {$user->uuid} ({$user->email})");
         
         $this->syncUserSubscriptions($user);
-        $this->info("Completed sync for user ID: {$userId}");
-        
+        $this->info("Completed sync for user UUID: {$userUuid}");
+
         return self::SUCCESS;
     }
 
@@ -113,7 +113,7 @@ class SyncCommand extends BaseCommand
                 } catch (\Exception $e) {
                     $errorCount++;
                     Log::error('Error syncing user subscriptions', [
-                        'user_id' => $user->id,
+                        'user_uuid' => $user->uuid,
                         'error' => $e->getMessage()
                     ]);
                 }
@@ -140,13 +140,13 @@ class SyncCommand extends BaseCommand
     private function syncUserSubscriptions(User $user): void
     {
         if ($this->output->isVerbose()) {
-            $this->info("Syncing subscriptions for user: {$user->id} ({$user->email})");
+            $this->info("Syncing subscriptions for user: {$user->uuid} ({$user->email})");
         }
         
         // Skip if user doesn't have a Stripe ID
         if (!$user->stripe_id) {
             if ($this->output->isVerbose()) {
-                $this->line("  Skipping user {$user->id}: No Stripe ID");
+                $this->line("  Skipping user {$user->uuid}: No Stripe ID");
             }
             return;
         }
@@ -198,7 +198,7 @@ class SyncCommand extends BaseCommand
         $isNew = !$subscription->exists;
         
         // Update subscription attributes
-        $subscription->user_id = $user->id;
+        $subscription->user_uuid = $user->uuid;
         $subscription->type = 'default';
         $subscription->stripe_status = $stripeSubscription->status;
         $subscription->stripe_price = $stripeSubscription->items->data[0]->price->id ?? null;
@@ -306,14 +306,14 @@ class SyncCommand extends BaseCommand
         
         if ($isDryRun) {
             if ($this->output->isVerbose()) {
-                $this->line("  Would update last sync timestamp for user {$user->id}");
+                $this->line("  Would update last sync timestamp for user {$user->uuid}");
             }
         } else {
             $user->last_subscription_sync = now();
             $user->save();
             
             if ($this->output->isVerbose()) {
-                $this->line("  Updated last sync timestamp for user {$user->id}");
+                $this->line("  Updated last sync timestamp for user {$user->uuid}");
             }
         }
     }

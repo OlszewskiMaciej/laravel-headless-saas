@@ -18,7 +18,7 @@ class CheckExpiredTrialsCommand extends BaseCommand
      */
     protected $signature = 'subscription:check-expired-trials 
                             {--dry-run : Show what would be done without making changes}
-                            {--user= : Check specific user ID only}';
+                            {--user= : Check specific user UUID only}';
 
     /**
      * The console command description.
@@ -42,13 +42,13 @@ class CheckExpiredTrialsCommand extends BaseCommand
         $this->info('Checking for expired trials...');
         
         $dryRun = $this->option('dry-run');
-        $specificUserId = $this->option('user');
+        $specificUserUuid = $this->option('user');
         
         if ($dryRun) {
             $this->warn('Running in DRY RUN mode - no changes will be made.');
         }
 
-        $expiredTrialUsers = $this->getExpiredTrialUsers($specificUserId);
+        $expiredTrialUsers = $this->getExpiredTrialUsers($specificUserUuid);
         
         if ($expiredTrialUsers->isEmpty()) {
             $this->info('No users with expired trials found.');
@@ -66,14 +66,14 @@ class CheckExpiredTrialsCommand extends BaseCommand
     /**
      * Get users with expired trials
      */
-    private function getExpiredTrialUsers(?string $specificUserId)
+    private function getExpiredTrialUsers(?string $specificUserUuid)
     {
         $query = User::where('trial_ends_at', '<=', Carbon::now())
             ->whereNotNull('trial_ends_at')
             ->with('roles');
             
-        if ($specificUserId) {
-            $query->where('id', $specificUserId);
+        if ($specificUserUuid) {
+            $query->where('uuid', $specificUserUuid);
         }
         
         return $query->get();
@@ -178,7 +178,7 @@ class CheckExpiredTrialsCommand extends BaseCommand
         $this->error("  ✗ Error processing user {$user->email}: " . $e->getMessage());
         
         Log::error('Error processing expired trial user', [
-            'user_id' => $user->id,
+            'user_uuid' => $user->uuid,
             'email' => $user->email,
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString()
