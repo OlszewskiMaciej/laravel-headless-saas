@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
-use App\Services\ApiKeyService;
+use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
+use App\Console\Commands\ApiKey\Services\ApiKeyService;
 use Illuminate\Support\ServiceProvider;
 
 class ApiKeyServiceProvider extends ServiceProvider

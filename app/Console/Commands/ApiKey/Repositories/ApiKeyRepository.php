@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Modules\Admin\Repositories;
+namespace App\Console\Commands\ApiKey\Repositories;
 
-use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
+use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Models\ApiKey;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;

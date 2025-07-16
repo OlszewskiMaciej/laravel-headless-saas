@@ -2,7 +2,7 @@
 
 namespace App\Middleware;
 
-use App\Services\ApiKeyService;
+use App\Console\Commands\ApiKey\Services\ApiKeyService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

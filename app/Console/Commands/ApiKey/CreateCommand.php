@@ -3,7 +3,7 @@
 namespace App\Console\Commands\ApiKey;
 
 use App\Console\Commands\BaseCommand;
-use App\Services\ApiKeyService;
+use App\Console\Commands\ApiKey\Services\ApiKeyService;
 
 class CreateCommand extends BaseCommand
 {
@@ -122,7 +122,7 @@ class CreateCommand extends BaseCommand
         $this->newLine();
         
         $this->table(['Property', 'Value'], [
-            ['ID', $result['api_key']->id],
+            ['UUID', $result['api_key']->uuid],
             ['Name', $result['api_key']->name],
             ['Service', $result['api_key']->service],
             ['Environment', $result['api_key']->environment],

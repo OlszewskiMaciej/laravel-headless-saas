@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Admin\Repositories\Interfaces;
+namespace App\Console\Commands\ApiKey\Repositories\Interfaces;
 
 use App\Models\ApiKey;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -21,4 +21,6 @@ interface ApiKeyRepositoryInterface
     public function update(ApiKey $apiKey, array $data): bool;
     
     public function delete(ApiKey $apiKey): bool;
+    
+    public function deactivate(ApiKey $apiKey): bool;
 }

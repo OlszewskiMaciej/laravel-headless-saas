@@ -4,7 +4,7 @@ namespace App\Console\Commands\ApiKey;
 
 use App\Console\Commands\BaseCommand;
 use App\Models\ApiKey;
-use App\Services\ApiKeyService;
+use App\Console\Commands\ApiKey\Services\ApiKeyService;
 
 class RevokeCommand extends BaseCommand
 {
@@ -14,7 +14,7 @@ class RevokeCommand extends BaseCommand
      * @var string
      */
     protected $signature = 'api-key:revoke
-                            {id? : The ID of the API key to revoke}
+                            {uuid? : The UUID of the API key to revoke}
                             {--force : Permanently delete the key instead of just disabling it}
                             {--all-inactive : Revoke all inactive keys}
                             {--confirm : Skip confirmation prompts}';
@@ -44,9 +44,9 @@ class RevokeCommand extends BaseCommand
                 return $this->revokeAllInactive();
             }
 
-            $id = $this->getApiKeyId();
-            $apiKey = $this->findApiKey($id);
-            
+            $uuid = $this->getApiKeyUuid();
+            $apiKey = $this->findApiKey($uuid);
+
             if (!$apiKey) {
                 return self::FAILURE;
             }
@@ -70,28 +70,28 @@ class RevokeCommand extends BaseCommand
     /**
      * Get API key ID from argument or prompt
      */
-    private function getApiKeyId(): string
+    private function getApiKeyUuid(): string
     {
-        $id = $this->argument('id');
-        
-        if (!$id) {
-            $this->info('No API key ID provided. Listing available keys:');
+        $uuid = $this->argument('uuid');
+
+        if (!$uuid) {
+            $this->info('No API key UUID provided. Listing available keys:');
             $this->call('api-key:list');
-            $id = $this->ask('Enter the ID of the API key to revoke');
+            $uuid = $this->ask('Enter the UUID of the API key to revoke');
         }
-        
-        return $id;
+
+        return $uuid;
     }
 
     /**
-     * Find API key by ID
+     * Find API key by UUID
      */
-    private function findApiKey(string $id): ?ApiKey
+    private function findApiKey(string $uuid): ?ApiKey
     {
-        $apiKey = ApiKey::find($id);
+        $apiKey = ApiKey::find($uuid);
         
         if (!$apiKey) {
-            $this->error("API key with ID {$id} not found.");
+            $this->error("API key with UUID {$uuid} not found.");
         }
         
         return $apiKey;
@@ -104,7 +104,7 @@ class RevokeCommand extends BaseCommand
     {
         $this->info('API Key Details:');
         $this->table(['Property', 'Value'], [
-            ['ID', $apiKey->id],
+            ['UUID', $apiKey->uuid],
             ['Name', $apiKey->name],
             ['Service', $apiKey->service],
             ['Environment', $apiKey->environment],
