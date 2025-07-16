@@ -14,5 +14,5 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
      *
      * @var string
      */
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'uuid';
 }

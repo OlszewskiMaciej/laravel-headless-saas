@@ -75,8 +75,8 @@ return [
         /*
          * Change this if you want to name the related pivots other than defaults
          */
-        'role_pivot_key' => null, // default 'role_id',
-        'permission_pivot_key' => null, // default 'permission_id',
+        'role_pivot_key' => 'role_uuid', // default 'role_id',
+        'permission_pivot_key' => 'permission_uuid', // default 'permission_id',
 
         /*
          * Change this if you want to name the related model primary key other than
@@ -93,7 +93,7 @@ return [
          * foreign key is other than `team_id`.
          */
 
-        'team_foreign_key' => 'team_id',
+        'team_foreign_key' => 'team_uuid',
     ],
 
     /*

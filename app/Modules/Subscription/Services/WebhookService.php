@@ -48,7 +48,7 @@ class WebhookService
                 $this->userRepository->syncRoles($user, $roles);
                 
                 Log::info('User role updated after successful payment', [
-                    'user_id' => $user->id, 
+                    'user_uuid' => $user->uuid,
                     'roles' => $roles
                 ]);
             }

@@ -15,6 +15,13 @@ class ApiKey extends Model
     use HasFactory, HasUuid, SoftDeletes, LogsActivity;
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'uuid';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<string>
