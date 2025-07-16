@@ -34,7 +34,7 @@ class ApiKeyServiceTest extends TestCase
             ->once()
             ->andReturnUsing(function ($data) {
                 $apiKey = new ApiKey($data);
-                $apiKey->id = 1; // Mock the ID
+                $apiKey->uuid = 1; // Mock the ID
                 return $apiKey;
             });
             

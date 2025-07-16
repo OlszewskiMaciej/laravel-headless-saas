@@ -47,7 +47,7 @@ class ProfileUpdateTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('users', [
-            'id' => $user->id,
+            'uuid' => $user->uuid,
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
         ]);
@@ -201,7 +201,7 @@ class ProfileUpdateTest extends TestCase
                 'status',
                 'message',
                 'data' => [
-                    'id',
+                    'uuid',
                     'name',
                     'email',
                 ]

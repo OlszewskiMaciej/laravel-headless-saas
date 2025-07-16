@@ -26,7 +26,7 @@ class ApiKeyModelTest extends TestCase
         
         // The key should be a UUID, not an auto-incrementing integer
         $this->assertTrue(
-            preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $apiKey->id) === 1
+            preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $apiKey->uuid) === 1
         );
         
         // And it should not be incrementing
@@ -205,7 +205,7 @@ class ApiKeyModelTest extends TestCase
         
         // Verify the key exists
         $this->assertDatabaseHas('api_keys', [
-            'id' => $apiKey->id,
+            'uuid' => $apiKey->uuid,
         ]);
         
         // Delete the key
@@ -213,16 +213,16 @@ class ApiKeyModelTest extends TestCase
         
         // The key should still exist in the database (soft deleted)
         $this->assertDatabaseHas('api_keys', [
-            'id' => $apiKey->id,
+            'uuid' => $apiKey->uuid,
         ]);
         
         // But should not be retrievable without withTrashed()
-        $this->assertNull(ApiKey::find($apiKey->id));
+        $this->assertNull(ApiKey::find($apiKey->uuid));
         
         // Should be retrievable with withTrashed()
-        $this->assertNotNull(ApiKey::withTrashed()->find($apiKey->id));
+        $this->assertNotNull(ApiKey::withTrashed()->find($apiKey->uuid));
         
         // Should have a deleted_at timestamp
-        $this->assertNotNull(ApiKey::withTrashed()->find($apiKey->id)->deleted_at);
+        $this->assertNotNull(ApiKey::withTrashed()->find($apiKey->uuid)->deleted_at);
     }
 }
