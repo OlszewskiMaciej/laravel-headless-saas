@@ -28,7 +28,7 @@ class ProfileController extends BaseController
             return $this->success(new UserResource($request->user()));
         } catch (\Exception $e) {
             Log::error('Failed to get user profile: ' . $e->getMessage(), [
-                'user_id' => $request->user()?->id,
+                'user_uuid' => $request->user()?->uuid,
                 'trace' => $e->getTraceAsString()
             ]);
             
@@ -53,7 +53,7 @@ class ProfileController extends BaseController
             );
         } catch (\Exception $e) {
             Log::error('Failed to update user profile: ' . $e->getMessage(), [
-                'user_id' => $request->user()?->id,
+                'user_uuid' => $request->user()?->uuid,
                 'data' => $request->validated(),
                 'trace' => $e->getTraceAsString()
             ]);

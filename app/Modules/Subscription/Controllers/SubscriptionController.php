@@ -30,7 +30,7 @@ class SubscriptionController extends Controller
             return $this->success($data);
         } catch (\Exception $e) {
             Log::error('Failed to get subscription status: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
+                'user_uuid' => $request->user()->uuid,
                 'trace' => $e->getTraceAsString()
             ]);
             return $this->error('Failed to retrieve subscription information', 500);
@@ -58,7 +58,7 @@ class SubscriptionController extends Controller
             return $this->error($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Failed to start trial: ' . $e->getMessage(), [
-                'user_id' => $user->id,
+                'user_uuid' => $user->uuid,
                 'trace' => $e->getTraceAsString()
             ]);
             return $this->error('Failed to start trial', 500);
@@ -85,7 +85,7 @@ class SubscriptionController extends Controller
             return $this->error($e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('Checkout session creation error: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
+                'user_uuid' => $request->user()->uuid,
                 'plan' => $request->plan ?? null,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -109,7 +109,7 @@ class SubscriptionController extends Controller
             return $this->error($e->getMessage(), 422);
         } catch (\Exception $e) {
             Log::error('Billing portal session creation error: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
+                'user_uuid' => $request->user()->uuid,
                 'trace' => $e->getTraceAsString()
             ]);
             return $this->error('Failed to create billing portal session', 500);

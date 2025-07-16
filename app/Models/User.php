@@ -20,6 +20,13 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, HasRoles, Billable, LogsActivity, HasUuid;
 
     /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'uuid';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -29,6 +36,7 @@ class User extends Authenticatable
         'email',
         'password',
         'trial_ends_at',
+        'email_verified_at',
     ];
 
     /**

@@ -14,5 +14,5 @@ class Subscription extends CashierSubscription
      *
      * @var string
      */
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'uuid';
 }

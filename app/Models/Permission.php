@@ -14,5 +14,5 @@ class Permission extends SpatiePermission
      *
      * @var string
      */
-    protected $primaryKey = 'id';
+    protected $primaryKey = 'uuid';
 }

@@ -123,7 +123,7 @@ class SubscriptionService
             
             if ($logFallbackEvents) {
                 Log::error('Failed to get subscription status from Stripe: ' . $e->getMessage(), [
-                    'user_id' => $user->id,
+                    'user_uuid' => $user->uuid,
                     'stripe_id' => $user->stripe_id,
                     'error' => $e->getMessage(),
                     'fallback_enabled' => $fallbackEnabled
@@ -137,7 +137,7 @@ class SubscriptionService
 
             if ($logFallbackEvents) {
                 Log::info('Falling back to local database for subscription status', [
-                    'user_id' => $user->id,
+                    'user_uuid' => $user->uuid,
                     'stripe_id' => $user->stripe_id
                 ]);
             }
@@ -191,7 +191,7 @@ class SubscriptionService
             
             if ($isStale && $logFallbackEvents) {
                 Log::warning('Local subscription data is stale', [
-                    'user_id' => $user->id,
+                    'user_uuid' => $user->uuid,
                     'subscription_id' => $activeSubscription->stripe_id,
                     'data_age_hours' => $dataAge,
                     'max_age_hours' => $maxDataAgeHours
@@ -231,7 +231,7 @@ class SubscriptionService
             
             if ($logFallbackEvents) {
                 Log::error('Failed to get subscription status from local database: ' . $e->getMessage(), [
-                    'user_id' => $user->id,
+                    'user_uuid' => $user->uuid,
                     'stripe_id' => $user->stripe_id,
                     'error' => $e->getMessage()
                 ]);
@@ -377,18 +377,18 @@ class SubscriptionService
                     'plan' => $data['plan'] ?? null,
                     'currency' => $currency,
                     'mode' => $mode,
-                    'session_id' => $session->id,
+                    'session_uuid' => $session->uuid,
                 ])
                 ->log('created checkout session');
             
             return [
                 'url' => $session->url,
-                'session_id' => $session->id,
+                'session_uuid' => $session->uuid,
                 'currency' => $currency,
             ];
         } catch (\Exception $e) {
             Log::error('Failed to create Checkout session: ' . $e->getMessage(), [
-                'user_id' => $user->id,
+                'user_uuid' => $user->uuid,
                 'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
@@ -418,16 +418,16 @@ class SubscriptionService
             // Log activity
             activity()
                 ->causedBy($user)
-                ->withProperties(['session_id' => $session->id])
+                ->withProperties(['session_uuid' => $session->uuid])
                 ->log('accessed billing portal');
             
             return [
                 'url' => $session->url,
-                'session_id' => $session->id,
+                'session_uuid' => $session->uuid,
             ];
         } catch (\Exception $e) {
             Log::error('Failed to create Billing Portal session: ' . $e->getMessage(), [
-                'user_id' => $user->id,
+                'user_uuid' => $user->uuid,
                 'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
