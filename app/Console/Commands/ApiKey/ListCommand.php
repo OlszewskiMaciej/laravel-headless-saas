@@ -88,7 +88,7 @@ class ListCommand extends BaseCommand
     {
         $data = $keys->map(function ($key) {
             return [
-                $key->id,
+                $key->uuid,
                 $key->name,
                 $key->service,
                 $key->environment,
@@ -100,7 +100,7 @@ class ListCommand extends BaseCommand
         })->toArray();
         
         $this->table(
-            ['ID', 'Name', 'Service', 'Environment', 'Active', 'Deleted', 'Expires', 'Last Used'],
+            ['UUID', 'Name', 'Service', 'Environment', 'Active', 'Deleted', 'Expires', 'Last Used'],
             $data
         );
     }

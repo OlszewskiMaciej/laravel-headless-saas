@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Console\Commands\ApiKey\Services;
 
-use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
+use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Models\ApiKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
