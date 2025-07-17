@@ -22,28 +22,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'start trial',
             'access free features',
             'access premium features',
-            
+
             // Admin permissions
-            'view users',
-            'create users',
-            'show users',
-            'update users',
-            'delete users',
-
-            'view roles',
-            'create roles',
-            'update roles',
-            'delete roles',
-            
-            'view activity logs',
-
-            // API key permissions
-            'manage api keys',
-            'view api keys',
-            'create api keys',
-            'update api keys',
-            'revoke api keys',
-            'delete api keys',
+            //
         ];        
         
         foreach ($permissions as $permission) {
