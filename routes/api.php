@@ -6,10 +6,6 @@ use App\Modules\Auth\Controllers\PasswordResetController;
 use App\Modules\Subscription\Controllers\SubscriptionController;
 use App\Modules\Subscription\Controllers\WebhookController;
 use App\Modules\User\Controllers\ProfileController;
-use App\Modules\Admin\Controllers\UserController;
-use App\Modules\Admin\Controllers\RoleController;
-use App\Modules\Admin\Controllers\ActivityLogController;
-use App\Modules\Admin\Controllers\ApiKeyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,7 +44,6 @@ Route::middleware('api-key')->prefix('auth')->name('auth.')->group(function () {
     // Protected auth routes (require both API key and user auth)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-        Route::get('me', [AuthController::class, 'me'])->name('me');
     });
 });
 
@@ -71,37 +66,5 @@ Route::middleware(['api-key', 'auth:sanctum'])->group(function () {
     Route::prefix('user')->name('user.')->group(function () {
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
-    });
-     
-    // Admin routes
-    Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
-        Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:view users');
-        Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:create users');
-        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show')->middleware('permission:show users');
-        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:update users');
-        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('permission:delete users');
-        
-        // Roles and permissions routes
-        Route::apiResource('roles', RoleController::class)
-            ->middleware([
-                'index' => 'permission:view roles',
-                'store' => 'permission:create roles',
-                'show' => 'permission:view roles',
-                'update' => 'permission:update roles',
-                'destroy' => 'permission:delete roles'
-            ]);
-        
-        // Activity logs
-        Route::get('logs', [ActivityLogController::class, 'index'])->name('logs.index')->middleware('permission:view activity logs');
-        
-        // API Key Management
-        Route::prefix('api-keys')->name('api-keys.')->middleware('permission:manage api keys')->group(function () {
-            Route::get('/', [ApiKeyController::class, 'index'])->name('index');
-            Route::post('/', [ApiKeyController::class, 'store'])->name('store');
-            Route::get('/{apiKey}', [ApiKeyController::class, 'show'])->name('show');
-            Route::put('/{apiKey}', [ApiKeyController::class, 'update'])->name('update');
-            Route::post('/{apiKey}/revoke', [ApiKeyController::class, 'revoke'])->name('revoke');
-            Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->name('destroy');
-        });
     });
 });

@@ -2,14 +2,10 @@
 
 namespace App\Providers;
 
-use App\Modules\Admin\Repositories\Interfaces\ActivityLogRepositoryInterface;
-use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
-use App\Modules\Admin\Repositories\Interfaces\RoleRepositoryInterface;
+use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Modules\Subscription\Repositories\Interfaces\SubscriptionRepositoryInterface;
 use App\Modules\User\Repositories\Interfaces\UserRepositoryInterface;
-use App\Modules\Admin\Repositories\ActivityLogRepository;
-use App\Modules\Admin\Repositories\ApiKeyRepository;
-use App\Modules\Admin\Repositories\RoleRepository;
+use App\Console\Commands\ApiKey\Repositories\ApiKeyRepository;
 use App\Modules\Subscription\Repositories\SubscriptionRepository;
 use App\Modules\User\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
@@ -31,18 +27,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             ApiKeyRepositoryInterface::class,
             ApiKeyRepository::class
-        );
-
-        // Bind Role Repository
-        $this->app->bind(
-            RoleRepositoryInterface::class,
-            RoleRepository::class
-        );
-
-        // Bind Activity Log Repository
-        $this->app->bind(
-            ActivityLogRepositoryInterface::class,
-            ActivityLogRepository::class
         );
 
         // Bind Subscription Repository
