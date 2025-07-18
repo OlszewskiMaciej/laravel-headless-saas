@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Providers;
+namespace App\Console\Commands\ApiKey\Providers;
 
 use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Console\Commands\ApiKey\Services\ApiKeyService;
@@ -9,7 +9,7 @@ use Illuminate\Support\ServiceProvider;
 class ApiKeyServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * Register service bindings.
      */
     public function register(): void
     {

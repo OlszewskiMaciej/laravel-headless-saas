@@ -5,6 +5,6 @@ return [
     App\Providers\AuthServiceProvider::class,
     App\Providers\RouteServiceProvider::class,
     App\Providers\ResponseServiceProvider::class,
-    App\Providers\ApiKeyServiceProvider::class,
     App\Providers\RepositoryServiceProvider::class,
+    App\Providers\ServiceServiceProvider::class,
 ];
