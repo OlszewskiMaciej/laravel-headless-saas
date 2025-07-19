@@ -1126,13 +1126,13 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/api/test",
+          "raw": "{{base_url}}/api/up",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
-            "test"
+            "up"
           ]
         },
         "description": "Check API health"
