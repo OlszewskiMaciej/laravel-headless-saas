@@ -27,14 +27,16 @@ A comprehensive, production-ready API for headless SaaS applications built with 
 -   **API Key Management**: Create, revoke, and monitor API keys
 -   **Role & Permission Management**: Dynamic role and permission assignment
 -   **Activity Monitoring**: Real-time activity logs and user tracking
+-   **Quick Setup Command**: Fast environment setup for roles, permissions, admin and demo users (`user:quick-setup`)
 
 ### 🏗️ Architecture & Development
 
--   **Modular Structure**: Clean, organized codebase with separate modules
+-   **Modular Structure**: Clean, organized codebase with separate modules (see `app/Modules`)
 -   **Repository Pattern**: Abstracted data layer for better testability
 -   **UUID Primary Keys**: Enhanced security with UUID identifiers
 -   **Comprehensive Testing**: PHPUnit test suite for reliability
 -   **API Documentation**: Auto-generated Swagger/OpenAPI documentation
+-   **Module Routing**: Dynamic module-based routing system (see `config/modules.php`)
 
 ## 🛠️ Technology Stack
 
@@ -53,6 +55,9 @@ A comprehensive, production-ready API for headless SaaS applications built with 
 -   **Spatie Laravel Query Builder**: Advanced query filtering
 -   **L5 Swagger**: API documentation generation
 -   **Guzzle HTTP**: HTTP client for external APIs
+-   **PHPStan**: Static analysis (run with `vendor\bin\phpstan analyse`)
+-   **PHP CS Fixer**: Automatic code style fixing (run with `vendor\bin\php-cs-fixer fix`)
+-   **Laravel Prompts**: User-friendly CLI forms
 
 ### Development Tools
 
@@ -86,6 +91,10 @@ The application uses a comprehensive database schema with the following main tab
 ### API Management
 
 -   **api_keys**: Secure API key management with service/environment isolation
+
+### Modules
+
+-   **app/Modules**: Modular code structure (Auth, Subscription, Swagger, User)
 
 ### Monitoring
 
@@ -323,6 +332,23 @@ php artisan api-key:create {service} {environment} --name="Key Name" --descripti
 php artisan api-key:list
 php artisan api-key:revoke {id}
 ```
+
+## User Management & Quick Setup
+
+The `user:quick-setup` command allows fast initialization of roles, permissions, admin and demo users. You can run it with options:
+
+-   `--demo` – creates demo users and data
+-   `--production` – sets up for production (admin only)
+-   `--roles-only` – only creates roles and permissions
+-   No options – interactive setup
+
+Example:
+
+```
+php artisan user:quick-setup --demo
+```
+
+Demo users will have various roles and trial statuses. For production, you will be prompted for admin credentials.
 
 ## Testing with Postman
 
