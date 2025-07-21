@@ -28,11 +28,11 @@ jobs:
       - name: Create SQLite Database
         run: touch database/database.sqlite
 
-      - name: Run Migrations
-        run: php artisan migrate --no-interaction
-
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run Migrations
+        run: php artisan migrate --no-interaction
 
       - name: Copy Environment File
         run: cp .env.example .env
