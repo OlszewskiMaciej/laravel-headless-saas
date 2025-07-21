@@ -2,6 +2,8 @@
 
 namespace App\Core\Services;
 
+use Illuminate\Support\Facades\Schema;
+
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -39,11 +41,21 @@ class ModuleRouteService
             return $this->scanModules();
         }
 
-        return Cache::remember(
-            config('modules.cache_key', 'module_routes_list'),
-            config('modules.cache_ttl', 3600),
-            fn() => $this->scanModules()
-        );
+        // Avoid cache usage if cache table does not exist (e.g. during install)
+        try {
+            if (Schema::hasTable('cache')) {
+                return Cache::remember(
+                    config('modules.cache_key', 'module_routes_list'),
+                    config('modules.cache_ttl', 3600),
+                    fn() => $this->scanModules()
+                );
+            }
+        } catch (\Exception $e) {
+            // Fallback if cache table is missing or migration not run
+            return $this->scanModules();
+        }
+
+        return $this->scanModules();
     }
 
     /**

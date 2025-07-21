@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Subscription;
 
+use Illuminate\Support\Facades\Schema;
+
 use App\Console\Commands\BaseCommand;
 use Illuminate\Support\Facades\Cache;
 
@@ -91,22 +93,29 @@ class ClearPricesCacheCommand extends BaseCommand
         ];
         
         $clearedCount = 0;
-        
-        foreach ($specificKeys as $key) {
-            if (Cache::forget($key)) {
-                $clearedCount++;
-                $this->line("  ✓ Cleared cache key: {$key}");
+
+        // Avoid cache usage if cache table does not exist (e.g. during install)
+        try {
+            if (Schema::hasTable('cache')) {
+                foreach ($specificKeys as $key) {
+                    if (Cache::forget($key)) {
+                        $clearedCount++;
+                        $this->line("  ✓ Cleared cache key: {$key}");
+                    }
+                }
+                // Clear pattern-based cache
+                $patternCount = $this->clearCachePattern('stripe_prices_*');
+                $clearedCount += $patternCount;
+                if ($patternCount > 0) {
+                    $this->line("  ✓ Cleared {$patternCount} pattern-based cache entries");
+                }
+            } else {
+                $this->warn('Cache table does not exist. Skipping cache clear.');
             }
+        } catch (\Exception $e) {
+            $this->warn('Cache clear failed: ' . $e->getMessage());
         }
-        
-        // Clear pattern-based cache
-        $patternCount = $this->clearCachePattern('stripe_prices_*');
-        $clearedCount += $patternCount;
-        
-        if ($patternCount > 0) {
-            $this->line("  ✓ Cleared {$patternCount} pattern-based cache entries");
-        }
-        
+
         $this->info("Successfully cleared {$clearedCount} Stripe prices cache entries.");
         return self::SUCCESS;
     }
