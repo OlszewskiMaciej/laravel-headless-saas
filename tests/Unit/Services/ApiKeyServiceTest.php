@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Services;
 
-use App\Modules\Admin\Repositories\Interfaces\ApiKeyRepositoryInterface;
+use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Models\ApiKey;
-use App\Services\ApiKeyService;
+use App\Console\Commands\ApiKey\Services\ApiKeyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

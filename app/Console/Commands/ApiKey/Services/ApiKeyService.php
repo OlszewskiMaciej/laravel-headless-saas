@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\ApiKey\Services;
 
+use Illuminate\Support\Facades\Schema;
+
 use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Models\ApiKey;
 use Illuminate\Http\Request;
@@ -61,23 +63,30 @@ class ApiKeyService
         try {
             // Hash the key to compare with stored values
             $hashedKey = ApiKey::hashKey($key);
-            
-            // Cache key lookup for performance (5 minutes)
             $cacheKey = 'api_key:' . $hashedKey;
-            
-            return Cache::remember($cacheKey, 300, function () use ($hashedKey) {
-                $apiKey = $this->apiKeyRepository->findByKey($hashedKey);
-                
-                if ($apiKey && $apiKey->is_active && (!$apiKey->expires_at || $apiKey->expires_at->isFuture())) {
-                    // Update last used timestamp (but not too frequently)
-                    if (!$apiKey->last_used_at || now()->diffInMinutes($apiKey->last_used_at) > 60) {
-                        $this->apiKeyRepository->update($apiKey, ['last_used_at' => now()]);
-                    }
-                    return $apiKey;
+
+            // Avoid cache usage if cache table does not exist (e.g. during install)
+            try {
+                if (Schema::hasTable('cache')) {
+                    return Cache::remember($cacheKey, 300, function () use ($hashedKey) {
+                        $apiKey = $this->apiKeyRepository->findByKey($hashedKey);
+                        if ($apiKey && $apiKey->is_active && (!$apiKey->expires_at || $apiKey->expires_at->isFuture())) {
+                            // Update last used timestamp (but not too frequently)
+                            if (!$apiKey->last_used_at || now()->diffInMinutes($apiKey->last_used_at) > 60) {
+                                $this->apiKeyRepository->update($apiKey, ['last_used_at' => now()]);
+                            }
+                            return $apiKey;
+                        }
+                        return null;
+                    });
                 }
-                
-                return null;
-            });
+            } catch (\Exception $e) {
+                // Fallback if cache table is missing or migration not run
+                return $this->apiKeyRepository->findByKey($hashedKey);
+            }
+
+            // Fallback if cache not available
+            return $this->apiKeyRepository->findByKey($hashedKey);
         } catch (\Exception $e) {
             Log::error('API key validation failed: ' . $e->getMessage());
             return null;
