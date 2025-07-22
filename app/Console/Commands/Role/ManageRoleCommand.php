@@ -5,6 +5,7 @@ namespace App\Console\Commands\Role;
 use App\Console\Commands\BaseCommand;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Models\User;
 
 class ManageRoleCommand extends BaseCommand
 {
