@@ -2,7 +2,6 @@
 
 namespace App\Modules\Subscription\Controllers;
 
-use App\Models\User;
 use App\Modules\Subscription\Services\WebhookService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,7 +11,7 @@ use Stripe\Event;
 class WebhookController extends CashierWebhookController
 {
     protected WebhookService $webhookService;
-    
+
     public function __construct(WebhookService $webhookService)
     {
         $this->webhookService = $webhookService;
@@ -43,13 +42,13 @@ class WebhookController extends CashierWebhookController
     protected function processWebhookWithoutVerification(Request $request)
     {
         $payload = $request->all();
-        $event = Event::constructFrom($payload);
+        $event   = Event::constructFrom($payload);
 
         // Handle specific event types
         if ($event->type === 'invoice.payment_succeeded') {
             return $this->handleInvoicePaymentSucceeded($payload);
         }
-        
+
         if ($event->type === 'invoice.payment_failed') {
             return $this->handleInvoicePaymentFailed($payload);
         }

@@ -17,11 +17,12 @@ class AuthController
 
     public function __construct(
         private readonly AuthService $authService
-    ) {}
+    ) {
+    }
 
     /**
      * Register a new user
-     * 
+     *
      * @OA\Post(
      *     path="/auth/register",
      *     tags={"Auth"},
@@ -52,14 +53,14 @@ class AuthController
      *     ),
      *     @OA\Response(response=422, description="Validation error")
      * )
-     */    
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
             $result = $this->authService->register($request->validated());
-            
+
             return $this->success([
-                'user' => new UserResource($result['user']),
+                'user'  => new UserResource($result['user']),
                 'token' => $result['token']
             ], 'User registered successfully');
         } catch (\Exception $e) {
@@ -67,10 +68,10 @@ class AuthController
             return $this->error('Registration failed', 500);
         }
     }
-    
+
     /**
      * Login a user
-     * 
+     *
      * @OA\Post(
      *     path="/auth/login",
      *     tags={"Auth"},
@@ -99,14 +100,14 @@ class AuthController
      *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
      * )
-     */    
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         try {
             $result = $this->authService->login($request->email, $request->password);
-            
+
             return $this->success([
-                'user' => new UserResource($result['user']),
+                'user'  => new UserResource($result['user']),
                 'token' => $result['token']
             ], 'Login successful');
         } catch (\InvalidArgumentException $e) {
@@ -124,7 +125,7 @@ class AuthController
     {
         try {
             $this->authService->logout($request->user());
-            
+
             return $this->success(null, 'Logged out successfully');
         } catch (\Exception $e) {
             Log::error('Logout failed: ' . $e->getMessage());

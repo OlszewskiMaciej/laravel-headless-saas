@@ -11,7 +11,8 @@ class WebhookService
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository
-    ) {}
+    ) {
+    }
 
     /**
      * Handle invoice payment succeeded - subscription auto-renewal
@@ -21,7 +22,7 @@ class WebhookService
         try {
             // For testing environment, accept direct Event object
             $event = is_array($payload) ? Event::constructFrom($payload) : $payload;
-            
+
             $invoice = $event['data']['object'];
 
             // Skip if this isn't a subscription invoice
@@ -30,13 +31,13 @@ class WebhookService
             }
 
             Log::info('Subscription payment succeeded', [
-                'customer' => $invoice->customer,
+                'customer'     => $invoice->customer,
                 'subscription' => $invoice->subscription
             ]);
 
             // Find the relevant user
             $user = User::where('stripe_id', $invoice->customer)->first();
-            
+
             if (!$user) {
                 Log::warning('User not found for subscription payment', ['customer' => $invoice->customer]);
                 return true;
@@ -46,10 +47,10 @@ class WebhookService
             if (!$user->hasRole('premium')) {
                 $roles = $user->hasRole('admin') ? ['admin', 'premium'] : ['premium'];
                 $this->userRepository->syncRoles($user, $roles);
-                
+
                 Log::info('User role updated after successful payment', [
                     'user_uuid' => $user->uuid,
-                    'roles' => $roles
+                    'roles'     => $roles
                 ]);
             }
 
@@ -58,7 +59,7 @@ class WebhookService
                 ->causedBy($user)
                 ->withProperties([
                     'subscription_id' => $invoice->subscription,
-                    'invoice_id' => $invoice->id,
+                    'invoice_id'      => $invoice->id,
                 ])
                 ->log('subscription renewed automatically');
 
@@ -79,7 +80,7 @@ class WebhookService
         try {
             // For testing environment, accept direct Event object
             $event = is_array($payload) ? Event::constructFrom($payload) : $payload;
-            
+
             $invoice = $event['data']['object'];
 
             // Skip if this isn't a subscription invoice
@@ -88,13 +89,13 @@ class WebhookService
             }
 
             Log::warning('Subscription payment failed', [
-                'customer' => $invoice->customer,
-                'subscription' => $invoice->subscription,
+                'customer'      => $invoice->customer,
+                'subscription'  => $invoice->subscription,
                 'attempt_count' => $invoice->attempt_count ?? 1
             ]);
 
             $user = User::where('stripe_id', $invoice->customer)->first();
-            
+
             if (!$user) {
                 Log::warning('User not found for failed payment', ['customer' => $invoice->customer]);
                 return true;
@@ -105,8 +106,8 @@ class WebhookService
                 ->causedBy($user)
                 ->withProperties([
                     'subscription_id' => $invoice->subscription,
-                    'invoice_id' => $invoice->id,
-                    'attempt_count' => $invoice->attempt_count ?? 1
+                    'invoice_id'      => $invoice->id,
+                    'attempt_count'   => $invoice->attempt_count ?? 1
                 ])
                 ->log('subscription payment failed');
 

@@ -12,7 +12,10 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class ApiKey extends Model
 {
-    use HasFactory, HasUuid, SoftDeletes, LogsActivity;
+    use HasFactory;
+    use HasUuid;
+    use SoftDeletes;
+    use LogsActivity;
 
     /**
      * The primary key for the model.
@@ -54,9 +57,9 @@ class ApiKey extends Model
     protected function casts(): array
     {
         return [
-            'expires_at' => 'datetime',
+            'expires_at'   => 'datetime',
             'last_used_at' => 'datetime',
-            'is_active' => 'boolean',
+            'is_active'    => 'boolean',
         ];
     }
 

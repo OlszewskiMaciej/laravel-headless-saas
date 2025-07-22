@@ -17,7 +17,13 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, Billable, LogsActivity, HasUuid;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+    use HasRoles;
+    use Billable;
+    use LogsActivity;
+    use HasUuid;
 
     /**
      * The primary key associated with the table.
@@ -61,11 +67,11 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'trial_ends_at' => 'datetime',
+            'password'          => 'hashed',
+            'trial_ends_at'     => 'datetime',
         ];
     }
-    
+
     /**
      * Configure the activity log options for the model.
      */

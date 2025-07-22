@@ -38,18 +38,18 @@ class CreateUserCommand extends BaseCommand
      */
     public function handle(): int
     {
-        $name = $this->option('name') ?: $this->ask('What is the user\'s name?');
-        $email = $this->option('email') ?: $this->ask('What is the user\'s email?');
+        $name     = $this->option('name') ?: $this->ask('What is the user\'s name?');
+        $email    = $this->option('email') ?: $this->ask('What is the user\'s email?');
         $password = $this->option('password') ?: $this->secret('What is the user\'s password?');
-        
+
         // Validate input
         $validator = Validator::make([
-            'name' => $name,
-            'email' => $email,
+            'name'     => $name,
+            'email'    => $email,
             'password' => $password,
         ], [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8',
         ]);
 
@@ -66,32 +66,32 @@ class CreateUserCommand extends BaseCommand
             // Use a date far in the future but within MySQL's valid range
             $trialEndsAt = Carbon::create(2037, 1, 1, 0, 0, 0); // Effectively unlimited
         } elseif (!$this->option('no-trial')) {
-            $trialDays = (int) ($this->option('trial-days') ?: 30);
+            $trialDays   = (int) ($this->option('trial-days') ?: 30);
             $trialEndsAt = Carbon::now()->addDays($trialDays);
         }
 
         // Create user
         $user = User::create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'trial_ends_at' => $trialEndsAt,
+            'name'              => $name,
+            'email'             => $email,
+            'password'          => Hash::make($password),
+            'trial_ends_at'     => $trialEndsAt,
             'email_verified_at' => Carbon::now(),
         ]);
 
-        $this->success("User created successfully!");
+        $this->success('User created successfully!');
         $this->line("UUID: {$user->uuid}");
         $this->line("Name: {$user->name}");
         $this->line("Email: {$user->email}");
-        
+
         if ($trialEndsAt) {
             if ($this->option('unlimited-trial')) {
-                $this->line("Trial: Unlimited");
+                $this->line('Trial: Unlimited');
             } else {
                 $this->line("Trial ends: {$trialEndsAt->format('Y-m-d H:i:s')}");
             }
         } else {
-            $this->line("Trial: None");
+            $this->line('Trial: None');
         }
 
         // Handle role assignment
@@ -118,7 +118,7 @@ class CreateUserCommand extends BaseCommand
     private function assignRole(User $user, string $roleName): void
     {
         $role = Role::where('name', $roleName)->first();
-        
+
         if (!$role) {
             $this->warning("Role '{$roleName}' not found. Creating it...");
             $role = Role::create(['name' => $roleName]);

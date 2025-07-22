@@ -33,7 +33,7 @@ class QuickSetupCommand extends BaseCommand
      */
     public function handle(): int
     {
-        $this->line("🚀 Starting Laravel Headless SaaS Setup...");
+        $this->line('🚀 Starting Laravel Headless SaaS Setup...');
 
         if ($this->option('roles-only')) {
             return $this->setupRolesOnly();
@@ -57,7 +57,7 @@ class QuickSetupCommand extends BaseCommand
     private function setupRolesOnly(): int
     {
         $this->createRolesAndPermissions();
-        $this->success("✅ Roles and permissions setup completed!");
+        $this->success('✅ Roles and permissions setup completed!');
         return self::SUCCESS;
     }
 
@@ -66,13 +66,13 @@ class QuickSetupCommand extends BaseCommand
      */
     private function setupProduction(): int
     {
-        $this->line("🔧 Setting up production environment...");
+        $this->line('🔧 Setting up production environment...');
 
         // Create roles and permissions
         $this->createRolesAndPermissions();
 
         // Create admin user
-        $adminEmail = $this->ask('Enter admin email:', 'admin@yourapp.com');
+        $adminEmail    = $this->ask('Enter admin email:', 'admin@yourapp.com');
         $adminPassword = $this->secret('Enter admin password:');
 
         if (User::where('email', $adminEmail)->exists()) {
@@ -81,18 +81,18 @@ class QuickSetupCommand extends BaseCommand
         }
 
         $admin = User::create([
-            'name' => 'System Administrator',
-            'email' => $adminEmail,
-            'password' => Hash::make($adminPassword),
+            'name'              => 'System Administrator',
+            'email'             => $adminEmail,
+            'password'          => Hash::make($adminPassword),
             'email_verified_at' => Carbon::now(),
-            'trial_ends_at' => Carbon::create(2037, 1, 1, 0, 0, 0), // Effectively unlimited
+            'trial_ends_at'     => Carbon::create(2037, 1, 1, 0, 0, 0), // Effectively unlimited
         ]);
 
         $admin->assignRole('admin');
 
-        $this->success("✅ Production setup completed!");
+        $this->success('✅ Production setup completed!');
         $this->line("Admin user created: {$adminEmail}");
-        $this->warning("🔐 Please store the admin credentials securely!");
+        $this->warning('🔐 Please store the admin credentials securely!');
 
         return self::SUCCESS;
     }
@@ -102,7 +102,7 @@ class QuickSetupCommand extends BaseCommand
      */
     private function setupDemo(): int
     {
-        $this->line("🎯 Setting up demo environment...");
+        $this->line('🎯 Setting up demo environment...');
 
         // Create roles and permissions
         $this->createRolesAndPermissions();
@@ -110,8 +110,8 @@ class QuickSetupCommand extends BaseCommand
         // Create demo users
         $this->createDemoUsers();
 
-        $this->success("✅ Demo setup completed!");
-        $this->line("Demo users created with various roles and trial statuses");
+        $this->success('✅ Demo setup completed!');
+        $this->line('Demo users created with various roles and trial statuses');
         $this->line("Run 'php artisan user:list' to see all users");
 
         return self::SUCCESS;
@@ -122,7 +122,7 @@ class QuickSetupCommand extends BaseCommand
      */
     private function interactiveSetup(): int
     {
-        $this->line("🎛️  Interactive Setup Mode");
+        $this->line('🎛️  Interactive Setup Mode');
 
         $setupType = $this->choice(
             'What type of setup would you like?',
@@ -156,12 +156,12 @@ class QuickSetupCommand extends BaseCommand
      */
     private function customSetup(): int
     {
-        $this->line("🔧 Custom Setup Mode");
+        $this->line('🔧 Custom Setup Mode');
 
         // Ask what to create
         $createRoles = $this->confirm('Create default roles and permissions?', true);
         $createAdmin = $this->confirm('Create admin user?', true);
-        $createDemo = $this->confirm('Create demo users?', false);
+        $createDemo  = $this->confirm('Create demo users?', false);
 
         if ($createRoles) {
             $this->createRolesAndPermissions();
@@ -175,7 +175,7 @@ class QuickSetupCommand extends BaseCommand
             $this->createDemoUsers();
         }
 
-        $this->success("✅ Custom setup completed!");
+        $this->success('✅ Custom setup completed!');
         return self::SUCCESS;
     }
 
@@ -184,11 +184,11 @@ class QuickSetupCommand extends BaseCommand
      */
     private function createRolesAndPermissions(): void
     {
-        $this->line("📝 Creating roles and permissions...");
+        $this->line('📝 Creating roles and permissions...');
 
         // Define roles and their permissions
         $rolesData = [
-            'admin' => [],
+            'admin'   => [],
             'premium' => [
                 'access free features',
                 'access premium features'
@@ -206,16 +206,16 @@ class QuickSetupCommand extends BaseCommand
         foreach ($rolesData as $roleName => $permissions) {
             // Create role if it doesn't exist
             $role = Role::firstOrCreate(['name' => $roleName]);
-            
+
             // Create permissions and assign to role
             $rolePermissions = [];
             foreach ($permissions as $permissionName) {
-                $permission = Permission::firstOrCreate(['name' => $permissionName]);
+                $permission        = Permission::firstOrCreate(['name' => $permissionName]);
                 $rolePermissions[] = $permission;
             }
-            
+
             $role->syncPermissions($rolePermissions);
-            $this->line("  ✓ Role '{$roleName}' created with " . count($permissions) . " permissions");
+            $this->line("  ✓ Role '{$roleName}' created with " . count($permissions) . ' permissions');
         }
     }
 
@@ -224,10 +224,10 @@ class QuickSetupCommand extends BaseCommand
      */
     private function createAdminUser(): void
     {
-        $this->line("👑 Creating admin user...");
+        $this->line('👑 Creating admin user...');
 
         $adminEmail = $this->ask('Enter admin email:', 'admin@example.com');
-        
+
         if (User::where('email', $adminEmail)->exists()) {
             $this->warning("Admin user with email {$adminEmail} already exists!");
             return;
@@ -236,11 +236,11 @@ class QuickSetupCommand extends BaseCommand
         $adminPassword = $this->secret('Enter admin password:') ?: 'admin123';
 
         $admin = User::create([
-            'name' => 'System Administrator',
-            'email' => $adminEmail,
-            'password' => Hash::make($adminPassword),
+            'name'              => 'System Administrator',
+            'email'             => $adminEmail,
+            'password'          => Hash::make($adminPassword),
             'email_verified_at' => Carbon::now(),
-            'trial_ends_at' => Carbon::create(2037, 1, 1, 0, 0, 0), // Effectively unlimited
+            'trial_ends_at'     => Carbon::create(2037, 1, 1, 0, 0, 0), // Effectively unlimited
         ]);
 
         $admin->assignRole('admin');
@@ -252,42 +252,42 @@ class QuickSetupCommand extends BaseCommand
      */
     private function createDemoUsers(): void
     {
-        $this->line("🎭 Creating demo users...");
+        $this->line('🎭 Creating demo users...');
 
         $demoUsers = [
             [
-                'name' => 'John Admin',
-                'email' => 'admin@demo.com',
-                'password' => 'demo123',
-                'role' => 'admin',
+                'name'       => 'John Admin',
+                'email'      => 'admin@demo.com',
+                'password'   => 'demo123',
+                'role'       => 'admin',
                 'trial_type' => 'unlimited'
             ],
             [
-                'name' => 'Jane Premium',
-                'email' => 'premium@demo.com',
-                'password' => 'demo123',
-                'role' => 'premium',
+                'name'       => 'Jane Premium',
+                'email'      => 'premium@demo.com',
+                'password'   => 'demo123',
+                'role'       => 'premium',
                 'trial_type' => 'active'
             ],
             [
-                'name' => 'Alice Trial',
-                'email' => 'trial@demo.com',
-                'password' => 'demo123',
-                'role' => 'trial',
+                'name'       => 'Alice Trial',
+                'email'      => 'trial@demo.com',
+                'password'   => 'demo123',
+                'role'       => 'trial',
                 'trial_type' => 'active'
             ],
             [
-                'name' => 'Charlie Free',
-                'email' => 'free@demo.com',
-                'password' => 'demo123',
-                'role' => 'free',
+                'name'       => 'Charlie Free',
+                'email'      => 'free@demo.com',
+                'password'   => 'demo123',
+                'role'       => 'free',
                 'trial_type' => 'none'
             ],
             [
-                'name' => 'Diana Expired',
-                'email' => 'expired@demo.com',
-                'password' => 'demo123',
-                'role' => 'free',
+                'name'       => 'Diana Expired',
+                'email'      => 'expired@demo.com',
+                'password'   => 'demo123',
+                'role'       => 'free',
                 'trial_type' => 'expired'
             ]
         ];
@@ -317,11 +317,11 @@ class QuickSetupCommand extends BaseCommand
             }
 
             $user = User::create([
-                'name' => $userData['name'],
-                'email' => $userData['email'],
-                'password' => Hash::make($userData['password']),
+                'name'              => $userData['name'],
+                'email'             => $userData['email'],
+                'password'          => Hash::make($userData['password']),
                 'email_verified_at' => Carbon::now(),
-                'trial_ends_at' => $trialEndsAt,
+                'trial_ends_at'     => $trialEndsAt,
             ]);
 
             $user->assignRole($userData['role']);

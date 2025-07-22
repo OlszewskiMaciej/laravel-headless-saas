@@ -39,7 +39,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
 
         return $query->paginate($perPage);
     }
-    
+
     /**
      * Get all API keys
      */
@@ -47,7 +47,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
     {
         return ApiKey::all();
     }
-    
+
     /**
      * Find API key by ID
      */
@@ -55,7 +55,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
     {
         return ApiKey::find($id);
     }
-    
+
     /**
      * Find API key by hashed key
      */
@@ -63,7 +63,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
     {
         return ApiKey::where('key', $hashedKey)->first();
     }
-    
+
     /**
      * Create a new API key with transaction
      */
@@ -73,7 +73,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
             return ApiKey::create($data);
         });
     }
-    
+
     /**
      * Update an API key with transaction
      */
@@ -83,7 +83,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
             return $apiKey->update($data);
         });
     }
-    
+
     /**
      * Delete an API key with transaction
      */
@@ -93,7 +93,7 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
             return $apiKey->delete();
         });
     }
-    
+
     /**
      * Deactivate an API key
      */

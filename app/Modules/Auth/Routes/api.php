@@ -20,7 +20,7 @@ Route::middleware('api-key')->prefix('auth')->name('auth.')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('login');
     Route::post('forgot-password', [PasswordResetController::class, 'forgotPassword'])->name('forgot-password');
     Route::post('reset-password', [PasswordResetController::class, 'resetPassword'])->name('reset-password');
-    
+
     // Protected auth routes (require both API key and user auth)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');

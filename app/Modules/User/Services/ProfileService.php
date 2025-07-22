@@ -11,7 +11,8 @@ class ProfileService
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository
-    ) {}
+    ) {
+    }
 
     /**
      * Update user profile
@@ -20,7 +21,7 @@ class ProfileService
     {
         try {
             $updateData = collect($data)->only(['name', 'email'])->toArray();
-            
+
             // Hash password if provided
             if (isset($data['password'])) {
                 $updateData['password'] = Hash::make($data['password']);

@@ -32,17 +32,17 @@ class ShowPricesCommand extends BaseCommand
     {
         try {
             $this->info('Fetching subscription prices from Stripe...');
-            
+
             $prices = $this->getPrices($subscriptionService);
-            
+
             if (empty($prices)) {
                 $this->warn('No prices found matching the criteria.');
                 return self::SUCCESS;
             }
-            
+
             $this->displayPrices($prices);
             return self::SUCCESS;
-            
+
         } catch (\Exception $e) {
             $this->error("Error fetching prices: {$e->getMessage()}");
             return self::FAILURE;
@@ -54,56 +54,56 @@ class ShowPricesCommand extends BaseCommand
      */
     private function getPrices(SubscriptionService $subscriptionService): array
     {
-        $currency = $this->option('currency');
+        $currency   = $this->option('currency');
         $activeOnly = $this->option('active-only');
-        
+
         // Get configured plans and their prices
-        $plans = config('subscription.plans', []);
+        $plans      = config('subscription.plans', []);
         $currencies = $currency ? [$currency] : array_keys(config('subscription.currencies', []));
-        
+
         $allPrices = [];
-        
+
         foreach ($currencies as $curr) {
             foreach ($plans as $planKey => $plan) {
                 if (isset($plan['currencies'][$curr])) {
                     $planCurrency = $plan['currencies'][$curr];
-                    
+
                     try {
                         // Try to get price from Stripe API
                         $stripePrice = $this->getStripePriceFromApi($planCurrency['stripe_id']);
-                        
+
                         if ($stripePrice && (!$activeOnly || $stripePrice['active'])) {
                             $allPrices[] = array_merge($stripePrice, [
-                                'plan_key' => $planKey,
+                                'plan_key'  => $planKey,
                                 'plan_name' => $plan['name'],
-                                'interval' => $plan['interval'] ?? 'month',
+                                'interval'  => $plan['interval'] ?? 'month',
                             ]);
                         }
                     } catch (\Exception $e) {
                         // Fallback to configuration data
                         if (!$activeOnly) {
                             $allPrices[] = [
-                                'id' => $planCurrency['stripe_id'],
+                                'id'           => $planCurrency['stripe_id'],
                                 'product_name' => $plan['name'],
-                                'unit_amount' => ($planCurrency['fallback_price'] ?? 0) * 100,
-                                'currency' => $curr,
-                                'active' => false,
-                                'created' => null,
-                                'recurring' => [
-                                    'interval' => $plan['interval'] ?? 'month',
+                                'unit_amount'  => ($planCurrency['fallback_price'] ?? 0) * 100,
+                                'currency'     => $curr,
+                                'active'       => false,
+                                'created'      => null,
+                                'recurring'    => [
+                                    'interval'       => $plan['interval'] ?? 'month',
                                     'interval_count' => 1
                                 ],
-                                'plan_key' => $planKey,
+                                'plan_key'  => $planKey,
                                 'plan_name' => $plan['name'],
-                                'interval' => $plan['interval'] ?? 'month',
-                                'source' => 'fallback'
+                                'interval'  => $plan['interval'] ?? 'month',
+                                'source'    => 'fallback'
                             ];
                         }
                     }
                 }
             }
         }
-        
+
         return $allPrices;
     }
 
@@ -114,17 +114,17 @@ class ShowPricesCommand extends BaseCommand
     {
         try {
             $stripe = new \Stripe\StripeClient(config('cashier.secret'));
-            $price = $stripe->prices->retrieve($priceId, ['expand' => ['product']]);
-            
+            $price  = $stripe->prices->retrieve($priceId, ['expand' => ['product']]);
+
             return [
-                'id' => $price->id,
+                'id'           => $price->id,
                 'product_name' => $price->product->name ?? 'Unknown Product',
-                'unit_amount' => $price->unit_amount,
-                'currency' => $price->currency,
-                'active' => $price->active,
-                'created' => $price->created,
-                'recurring' => $price->recurring ? [
-                    'interval' => $price->recurring->interval,
+                'unit_amount'  => $price->unit_amount,
+                'currency'     => $price->currency,
+                'active'       => $price->active,
+                'created'      => $price->created,
+                'recurring'    => $price->recurring ? [
+                    'interval'       => $price->recurring->interval,
                     'interval_count' => $price->recurring->interval_count
                 ] : null,
                 'source' => 'stripe'
@@ -140,10 +140,10 @@ class ShowPricesCommand extends BaseCommand
     private function displayPrices(array $prices): void
     {
         $format = $this->option('format');
-        
+
         match ($format) {
-            'json' => $this->displayAsJson($prices),
-            'csv' => $this->displayAsCsv($prices),
+            'json'  => $this->displayAsJson($prices),
+            'csv'   => $this->displayAsCsv($prices),
             default => $this->displayAsTable($prices)
         };
     }
@@ -154,13 +154,13 @@ class ShowPricesCommand extends BaseCommand
     private function displayAsTable(array $prices): void
     {
         $headers = [
-            'ID', 'Product', 'Amount', 'Currency', 
+            'ID', 'Product', 'Amount', 'Currency',
             'Interval', 'Active', 'Created'
         ];
-        
+
         $rows = array_map(function ($price) {
             return [
-                $price['id'] ?? 'N/A',
+                $price['id']           ?? 'N/A',
                 $price['product_name'] ?? 'Unknown',
                 $this->formatAmount($price['unit_amount'] ?? 0, $price['currency'] ?? 'usd'),
                 strtoupper($price['currency'] ?? 'USD'),
@@ -169,9 +169,9 @@ class ShowPricesCommand extends BaseCommand
                 isset($price['created']) ? date('Y-m-d', $price['created']) : 'N/A',
             ];
         }, $prices);
-        
+
         $this->table($headers, $rows);
-        $this->info("Total: " . count($prices) . " price(s)");
+        $this->info('Total: ' . count($prices) . ' price(s)');
     }
 
     /**
@@ -189,7 +189,7 @@ class ShowPricesCommand extends BaseCommand
     {
         $headers = ['ID', 'Product', 'Amount', 'Currency', 'Interval', 'Active', 'Created'];
         $this->line(implode(',', $headers));
-        
+
         foreach ($prices as $price) {
             $row = [
                 $price['id'] ?? 'N/A',
@@ -200,7 +200,7 @@ class ShowPricesCommand extends BaseCommand
                 $price['active'] ? 'Yes' : 'No',
                 isset($price['created']) ? date('Y-m-d', $price['created']) : 'N/A',
             ];
-            
+
             $this->line(implode(',', $row));
         }
     }
@@ -212,9 +212,9 @@ class ShowPricesCommand extends BaseCommand
     {
         $formatted = number_format($amount / 100, 2);
         return match (strtoupper($currency)) {
-            'USD' => '$' . $formatted,
-            'EUR' => '€' . $formatted,
-            'GBP' => '£' . $formatted,
+            'USD'   => '$' . $formatted,
+            'EUR'   => '€' . $formatted,
+            'GBP'   => '£' . $formatted,
             default => $formatted . ' ' . strtoupper($currency)
         };
     }
@@ -227,14 +227,14 @@ class ShowPricesCommand extends BaseCommand
         if (!isset($price['recurring'])) {
             return 'One-time';
         }
-        
-        $interval = $price['recurring']['interval'] ?? 'unknown';
+
+        $interval      = $price['recurring']['interval']       ?? 'unknown';
         $intervalCount = $price['recurring']['interval_count'] ?? 1;
-        
+
         if ($intervalCount === 1) {
             return ucfirst($interval);
         }
-        
+
         return "Every {$intervalCount} {$interval}s";
     }
 }

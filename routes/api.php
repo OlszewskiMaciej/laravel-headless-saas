@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\Route;
 // Main API health check route
 Route::get('/up', function () {
     return response()->json([
-        'status' => 'up',
+        'status'    => 'up',
         'timestamp' => now()->toISOString(),
-        'version' => config('app.version', '1.0.0')
+        'version'   => config('app.version', '1.0.0')
     ]);
 });

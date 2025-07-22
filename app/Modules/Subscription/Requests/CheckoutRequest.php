@@ -22,14 +22,14 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         $supportedCurrencies = array_keys(config('subscription.currencies', []));
-        
+
         return [
-            'plan' => 'sometimes|string',
-            'currency' => 'sometimes|string|in:' . implode(',', $supportedCurrencies),
-            'mode' => 'sometimes|string|in:subscription,payment,setup',
+            'plan'        => 'sometimes|string',
+            'currency'    => 'sometimes|string|in:' . implode(',', $supportedCurrencies),
+            'mode'        => 'sometimes|string|in:subscription,payment,setup',
             'success_url' => 'sometimes|string|url',
-            'cancel_url' => 'sometimes|string|url',
-            'trial_days' => 'sometimes|integer|min:0',
+            'cancel_url'  => 'sometimes|string|url',
+            'trial_days'  => 'sometimes|integer|min:0',
         ];
     }
 }

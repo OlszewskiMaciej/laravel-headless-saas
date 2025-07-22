@@ -17,12 +17,10 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
         // Check if user has premium role or active trial
         // Users with active trials should be treated as subscribed (premium access)
         $hasActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
-        
-        return $user->hasRole('premium') || 
-               $user->hasRole('trial') ||
-               $hasActiveTrial;
+
+        return $user->hasRole('premium') || $user->hasRole('trial') || $hasActiveTrial;
     }
-      
+
     /**
      * Check if user is on trial
      */
@@ -30,11 +28,10 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     {
         // Check if user has trial role or active local trial
         $hasActiveTrial = $user->trial_ends_at && $user->trial_ends_at->isFuture();
-        
-        return $user->hasRole('trial') || 
-               $hasActiveTrial;
+
+        return $user->hasRole('trial') || $hasActiveTrial;
     }
-      
+
     /**
      * Start trial for user
      */

@@ -27,11 +27,11 @@ class AppServiceProvider extends ServiceProvider
     {
         // Set Stripe API key from config
         Stripe::setApiKey(config('cashier.secret'));
-        
+
         // Configure Cashier models
         Cashier::useSubscriptionModel(Subscription::class);
         Cashier::useSubscriptionItemModel(SubscriptionItem::class);
-        
+
         Model::automaticallyEagerLoadRelationships();
         Model::shouldBeStrict(! app()->isProduction());
         DB::prohibitDestructiveCommands(app()->isProduction());

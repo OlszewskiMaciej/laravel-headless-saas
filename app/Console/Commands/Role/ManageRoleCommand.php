@@ -5,7 +5,6 @@ namespace App\Console\Commands\Role;
 use App\Console\Commands\BaseCommand;
 use App\Models\Role;
 use App\Models\Permission;
-use App\Models\User;
 
 class ManageRoleCommand extends BaseCommand
 {
@@ -33,7 +32,7 @@ class ManageRoleCommand extends BaseCommand
     public function handle(): int
     {
         $action = $this->argument('action');
-        
+
         switch ($action) {
             case 'create':
                 return $this->createRole();
@@ -45,7 +44,7 @@ class ManageRoleCommand extends BaseCommand
                 return $this->managePermissions();
             default:
                 $this->failure("Invalid action: {$action}");
-                $this->line("Available actions: create, delete, list, permissions");
+                $this->line('Available actions: create, delete, list, permissions');
                 return self::FAILURE;
         }
     }
@@ -56,7 +55,7 @@ class ManageRoleCommand extends BaseCommand
     private function createRole(): int
     {
         $roleName = $this->argument('role') ?: $this->ask('Enter role name:');
-        
+
         if (Role::where('name', $roleName)->exists()) {
             $this->failure("Role '{$roleName}' already exists.");
             return self::FAILURE;
@@ -69,7 +68,7 @@ class ManageRoleCommand extends BaseCommand
         if ($permissions = $this->option('permissions')) {
             $this->assignPermissions($role, $permissions);
         } else {
-            if ($this->confirm("Would you like to assign permissions to this role?")) {
+            if ($this->confirm('Would you like to assign permissions to this role?')) {
                 $this->manageRolePermissions($role);
             }
         }
@@ -83,7 +82,7 @@ class ManageRoleCommand extends BaseCommand
     private function deleteRole(): int
     {
         $roleName = $this->argument('role') ?: $this->ask('Enter role name to delete:');
-        
+
         $role = Role::where('name', $roleName)->first();
         if (!$role) {
             $this->failure("Role '{$roleName}' not found.");
@@ -97,7 +96,7 @@ class ManageRoleCommand extends BaseCommand
 
         if (!$this->option('force')) {
             if (!$this->confirm("Are you sure you want to delete role '{$roleName}'?")) {
-                $this->warning("Operation cancelled.");
+                $this->warning('Operation cancelled.');
                 return self::SUCCESS;
             }
         }
@@ -114,19 +113,19 @@ class ManageRoleCommand extends BaseCommand
     private function listRoles(): int
     {
         $roles = Role::with('permissions', 'users')->get();
-        
+
         if ($roles->isEmpty()) {
-            $this->warning("No roles found.");
+            $this->warning('No roles found.');
             return self::SUCCESS;
         }
 
-        $this->line("=== Roles ===");
-        
+        $this->line('=== Roles ===');
+
         foreach ($roles as $role) {
             $this->line("Role: {$role->name}");
-            $this->line("  Users: " . $role->users->count());
-            $this->line("  Permissions: " . $role->permissions->pluck('name')->implode(', '));
-            $this->line("");
+            $this->line('  Users: ' . $role->users->count());
+            $this->line('  Permissions: ' . $role->permissions->pluck('name')->implode(', '));
+            $this->line('');
         }
 
         return self::SUCCESS;
@@ -138,7 +137,7 @@ class ManageRoleCommand extends BaseCommand
     private function managePermissions(): int
     {
         $roleName = $this->argument('role') ?: $this->ask('Enter role name:');
-        
+
         $role = Role::where('name', $roleName)->first();
         if (!$role) {
             $this->failure("Role '{$roleName}' not found.");
@@ -158,13 +157,15 @@ class ManageRoleCommand extends BaseCommand
     private function assignPermissions(Role $role, string $permissionsString): int
     {
         $permissionNames = array_map('trim', explode(',', $permissionsString));
-        $permissions = [];
+        $permissions     = [];
 
         foreach ($permissionNames as $permissionName) {
-            if (empty($permissionName)) continue;
-            
+            if (empty($permissionName)) {
+                continue;
+            }
+
             $permission = Permission::where('name', $permissionName)->first();
-            
+
             if (!$permission) {
                 if ($this->confirm("Permission '{$permissionName}' doesn't exist. Create it?")) {
                     $permission = Permission::create(['name' => $permissionName]);
@@ -174,7 +175,7 @@ class ManageRoleCommand extends BaseCommand
                     continue;
                 }
             }
-            
+
             $permissions[] = $permission;
         }
 
@@ -198,9 +199,9 @@ class ManageRoleCommand extends BaseCommand
             case 'List current permissions':
                 $permissions = $role->permissions->pluck('name')->toArray();
                 if (empty($permissions)) {
-                    $this->warning("No permissions assigned to this role.");
+                    $this->warning('No permissions assigned to this role.');
                 } else {
-                    $this->success("Current permissions:");
+                    $this->success('Current permissions:');
                     foreach ($permissions as $permission) {
                         $this->line("  - {$permission}");
                     }
@@ -209,7 +210,7 @@ class ManageRoleCommand extends BaseCommand
 
             case 'Add permission':
                 $permissionName = $this->ask('Enter permission name:');
-                $permission = Permission::firstOrCreate(['name' => $permissionName]);
+                $permission     = Permission::firstOrCreate(['name' => $permissionName]);
                 $role->givePermissionTo($permission);
                 $this->success("Permission '{$permissionName}' added to role.");
                 break;
@@ -217,7 +218,7 @@ class ManageRoleCommand extends BaseCommand
             case 'Remove permission':
                 $rolePermissions = $role->permissions->pluck('name')->toArray();
                 if (empty($rolePermissions)) {
-                    $this->warning("No permissions to remove.");
+                    $this->warning('No permissions to remove.');
                 } else {
                     $permissionName = $this->choice('Which permission to remove?', $rolePermissions);
                     $role->revokePermissionTo($permissionName);
@@ -231,7 +232,7 @@ class ManageRoleCommand extends BaseCommand
                 break;
 
             default:
-                $this->warning("Operation cancelled.");
+                $this->warning('Operation cancelled.');
         }
 
         return self::SUCCESS;

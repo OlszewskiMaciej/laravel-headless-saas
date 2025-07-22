@@ -11,7 +11,8 @@ class AuthService
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository
-    ) {}
+    ) {
+    }
 
     /**
      * Register a new user
@@ -20,24 +21,24 @@ class AuthService
     {
         try {
             $userData = [
-                'name' => $data['name'],
-                'email' => $data['email'],
+                'name'     => $data['name'],
+                'email'    => $data['email'],
                 'password' => Hash::make($data['password']),
             ];
 
             $user = $this->userRepository->create($userData);
-            
+
             // Assign the free role by default
             $this->userRepository->syncRoles($user, ['free']);
-            
+
             // Create a token
             $token = $user->createToken('auth_token')->plainTextToken;
-            
+
             // Log activity
             activity()->causedBy($user)->log('registered');
-            
+
             return [
-                'user' => $user->load('roles'),
+                'user'  => $user->load('roles'),
                 'token' => $token
             ];
         } catch (\Exception $e) {
@@ -60,15 +61,15 @@ class AuthService
 
             // Delete all previous tokens
             $user->tokens()->delete();
-            
+
             // Create a new token
             $token = $user->createToken('auth_token')->plainTextToken;
-            
+
             // Log activity
             activity()->causedBy($user)->log('logged in');
-            
+
             return [
-                'user' => $user,
+                'user'  => $user,
                 'token' => $token
             ];
         } catch (\Exception $e) {
@@ -85,10 +86,10 @@ class AuthService
         try {
             // Revoke all tokens
             $user->tokens()->delete();
-            
+
             // Log activity
             activity()->causedBy($user)->log('logged out');
-            
+
             return true;
         } catch (\Exception $e) {
             Log::error('User logout failed: ' . $e->getMessage());

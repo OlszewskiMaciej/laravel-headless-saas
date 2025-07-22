@@ -17,19 +17,19 @@ use OpenApi\Annotations as OA;
  *         url="https://opensource.org/licenses/MIT"
  *     )
  * )
- * 
+ *
  * @OA\Server(
  *      url="/api",
  *      description="API Server"
  * )
- * 
+ *
  * @OA\SecurityScheme(
  *     securityScheme="bearerAuth",
  *     type="http",
  *     scheme="bearer",
  *     bearerFormat="JWT"
  * )
- * 
+ *
  * @OA\SecurityScheme(
  *     securityScheme="apiKeyHeader",
  *     type="apiKey",
@@ -37,7 +37,7 @@ use OpenApi\Annotations as OA;
  *     in="header",
  *     description="API key authentication via header"
  * )
- * 
+ *
  * @OA\SecurityScheme(
  *     securityScheme="apiKeyQuery",
  *     type="apiKey",
@@ -45,37 +45,37 @@ use OpenApi\Annotations as OA;
  *     in="query",
  *     description="API key authentication via query parameter"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="Auth",
  *     description="Authentication endpoints"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="User",
  *     description="User related endpoints"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="Subscription",
  *     description="Subscription management endpoints"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="Admin",
  *     description="Admin only endpoints"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="API Keys",
  *     description="API key management endpoints"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="Roles",
  *     description="Role management endpoints"
  * )
- * 
+ *
  * @OA\Tag(
  *     name="Permissions",
  *     description="Permission management endpoints"

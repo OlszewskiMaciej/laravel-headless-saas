@@ -53,7 +53,7 @@ class ListUsersCommand extends BaseCommand
         }
 
         // Output results
-        $format = $this->option('format') ?: 'table';
+        $format     = $this->option('format') ?: 'table';
         $exportFile = $this->option('export');
 
         switch ($format) {
@@ -88,7 +88,7 @@ class ListUsersCommand extends BaseCommand
         // Trial filter
         if ($trial = $this->option('trial')) {
             $now = Carbon::now();
-            
+
             switch ($trial) {
                 case 'active':
                     $query->whereNotNull('trial_ends_at')
@@ -115,12 +115,12 @@ class ListUsersCommand extends BaseCommand
     private function outputTable($users, $exportFile = null): int
     {
         if ($users->isEmpty()) {
-            $this->warning("No users found matching the criteria.");
+            $this->warning('No users found matching the criteria.');
             return self::SUCCESS;
         }
 
         $headers = ['Name', 'Email', 'Roles', 'Trial Status', 'Verified', 'Created'];
-        $rows = [];
+        $rows    = [];
 
         foreach ($users as $user) {
             $rows[] = [
@@ -134,7 +134,7 @@ class ListUsersCommand extends BaseCommand
         }
 
         $this->table($headers, $rows);
-        $this->line("Total users: " . $users->count());
+        $this->line('Total users: ' . $users->count());
 
         if ($exportFile) {
             $this->exportTable($headers, $rows, $exportFile);
@@ -150,26 +150,26 @@ class ListUsersCommand extends BaseCommand
     {
         $data = $users->map(function ($user) {
             return [
-                'uuid' => $user->uuid,
-                'name' => $user->name,
-                'email' => $user->email,
-                'roles' => $user->roles->pluck('name')->toArray(),
-                'trial_status' => $this->getTrialStatus($user),
+                'uuid'           => $user->uuid,
+                'name'           => $user->name,
+                'email'          => $user->email,
+                'roles'          => $user->roles->pluck('name')->toArray(),
+                'trial_status'   => $this->getTrialStatus($user),
                 'email_verified' => $user->email_verified_at ? true : false,
-                'created_at' => $user->created_at->toISOString(),
-                'updated_at' => $user->updated_at->toISOString(),
+                'created_at'     => $user->created_at->toISOString(),
+                'updated_at'     => $user->updated_at->toISOString(),
             ];
         });
 
         $json = json_encode($data, JSON_PRETTY_PRINT);
-        
+
         if ($exportFile) {
             // Create directory if it doesn't exist
             $directory = dirname($exportFile);
             if (!is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
-            
+
             file_put_contents($exportFile, $json);
             $this->success("Users exported to {$exportFile}");
         } else {
@@ -185,7 +185,7 @@ class ListUsersCommand extends BaseCommand
     private function outputCsv($users, $exportFile = null): int
     {
         $headers = ['UUID', 'Name', 'Email', 'Roles', 'Trial Status', 'Email Verified', 'Created At'];
-        $rows = [];
+        $rows    = [];
 
         foreach ($users as $user) {
             $rows[] = [
@@ -200,14 +200,14 @@ class ListUsersCommand extends BaseCommand
         }
 
         $csv = $this->arrayToCsv(array_merge([$headers], $rows));
-        
+
         if ($exportFile) {
             // Create directory if it doesn't exist
             $directory = dirname($exportFile);
             if (!is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
-            
+
             file_put_contents($exportFile, $csv);
             $this->success("Users exported to {$exportFile}");
         } else {
@@ -222,42 +222,42 @@ class ListUsersCommand extends BaseCommand
      */
     private function showStats(): int
     {
-        $totalUsers = User::count();
-        $verifiedUsers = User::whereNotNull('email_verified_at')->count();
+        $totalUsers      = User::count();
+        $verifiedUsers   = User::whereNotNull('email_verified_at')->count();
         $unverifiedUsers = $totalUsers - $verifiedUsers;
-        
-        $now = Carbon::now();
+
+        $now          = Carbon::now();
         $activeTrials = User::whereNotNull('trial_ends_at')
                            ->where('trial_ends_at', '>', $now)
                            ->count();
         $expiredTrials = User::whereNotNull('trial_ends_at')
                             ->where('trial_ends_at', '<', $now)
                             ->count();
-        $noTrials = User::whereNull('trial_ends_at')->count();
+        $noTrials        = User::whereNull('trial_ends_at')->count();
         $unlimitedTrials = User::whereNotNull('trial_ends_at')
                               ->whereYear('trial_ends_at', '>', 2090)
                               ->count();
 
-        $this->line("=== User Statistics ===");
+        $this->line('=== User Statistics ===');
         $this->line("Total Users: {$totalUsers}");
-        $this->line("");
-        
-        $this->line("Email Verification:");
+        $this->line('');
+
+        $this->line('Email Verification:');
         $this->line("  Verified: {$verifiedUsers}");
         $this->line("  Unverified: {$unverifiedUsers}");
-        $this->line("");
-        
-        $this->line("Trial Status:");
+        $this->line('');
+
+        $this->line('Trial Status:');
         $this->line("  Active Trials: {$activeTrials}");
         $this->line("  Expired Trials: {$expiredTrials}");
         $this->line("  No Trials: {$noTrials}");
         $this->line("  Unlimited Trials: {$unlimitedTrials}");
-        $this->line("");
+        $this->line('');
 
         // Role statistics
         $roles = Role::withCount('users')->get();
         if ($roles->isNotEmpty()) {
-            $this->line("Roles:");
+            $this->line('Roles:');
             foreach ($roles as $role) {
                 $this->line("  {$role->name}: {$role->users_count} users");
             }
@@ -295,7 +295,7 @@ class ListUsersCommand extends BaseCommand
     private function exportTable($headers, $rows, $filename): void
     {
         $content = "=== User List Export ===\n\n";
-        
+
         // Calculate column widths
         $widths = [];
         foreach ($headers as $i => $header) {

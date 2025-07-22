@@ -3,7 +3,6 @@
 namespace App\Console\Commands\ApiKey\Services;
 
 use Illuminate\Support\Facades\Schema;
-
 use App\Console\Commands\ApiKey\Repositories\Interfaces\ApiKeyRepositoryInterface;
 use App\Models\ApiKey;
 use Illuminate\Http\Request;
@@ -14,7 +13,8 @@ class ApiKeyService
 {
     public function __construct(
         private readonly ApiKeyRepositoryInterface $apiKeyRepository
-    ) {}
+    ) {
+    }
 
     /**
      * Create a new API key.
@@ -29,24 +29,24 @@ class ApiKeyService
         try {
             // Generate a new API key
             $plainTextKey = ApiKey::generateKey();
-            
+
             // Hash the key for storage
             $hashedKey = ApiKey::hashKey($plainTextKey);
-            
+
             // Create and store the API key
             $apiKey = $this->apiKeyRepository->create([
-                'name' => $name,
-                'key' => $hashedKey,
-                'service' => $service,
+                'name'        => $name,
+                'key'         => $hashedKey,
+                'service'     => $service,
                 'environment' => $environment,
                 'description' => $description,
-                'expires_at' => $expiresAt,
-                'is_active' => true,
+                'expires_at'  => $expiresAt,
+                'is_active'   => true,
             ]);
-            
+
             // Return both the model and the plain text key
             return [
-                'api_key' => $apiKey,
+                'api_key'        => $apiKey,
                 'plain_text_key' => $plainTextKey,
             ];
         } catch (\Exception $e) {
@@ -63,7 +63,7 @@ class ApiKeyService
         try {
             // Hash the key to compare with stored values
             $hashedKey = ApiKey::hashKey($key);
-            $cacheKey = 'api_key:' . $hashedKey;
+            $cacheKey  = 'api_key:' . $hashedKey;
 
             // Avoid cache usage if cache table does not exist (e.g. during install)
             try {
@@ -100,12 +100,12 @@ class ApiKeyService
     {
         // Check header (recommended approach)
         $key = $request->header('X-API-KEY');
-        
+
         // Fallback to query parameter (not recommended for production)
         if (!$key) {
             $key = $request->query('api_key');
         }
-        
+
         return $key;
     }
 
@@ -129,11 +129,11 @@ class ApiKeyService
     {
         try {
             $result = $this->apiKeyRepository->update($apiKey, $data);
-            
+
             // Clear the cache
             $cacheKey = 'api_key:' . $apiKey->key;
             Cache::forget($cacheKey);
-            
+
             // Return the updated ApiKey object
             return $apiKey->fresh();
         } catch (\Exception $e) {
@@ -149,11 +149,11 @@ class ApiKeyService
     {
         try {
             $result = $this->apiKeyRepository->deactivate($apiKey);
-            
+
             // Clear the cache
             $cacheKey = 'api_key:' . $apiKey->key;
             Cache::forget($cacheKey);
-            
+
             return $result;
         } catch (\Exception $e) {
             Log::error('API key revocation failed: ' . $e->getMessage());
@@ -170,7 +170,7 @@ class ApiKeyService
             // Clear the cache
             $cacheKey = 'api_key:' . $apiKey->key;
             Cache::forget($cacheKey);
-            
+
             return $this->apiKeyRepository->delete($apiKey);
         } catch (\Exception $e) {
             Log::error('API key deletion failed: ' . $e->getMessage());
