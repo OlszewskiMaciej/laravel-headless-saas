@@ -34,7 +34,7 @@ class ManageTrialCommand extends BaseCommand
     public function handle(): int
     {
         $userIdentifier = $this->argument('user');
-        
+
         // Find user by email or UUID
         $user = User::where('email', $userIdentifier)
                    ->orWhere('uuid', $userIdentifier)
@@ -82,19 +82,19 @@ class ManageTrialCommand extends BaseCommand
     private function showTrialStatus(User $user): int
     {
         $this->line("Trial Status for {$user->name}:");
-        
+
         if (!$user->trial_ends_at) {
-            $this->warning("No trial configured");
+            $this->warning('No trial configured');
             return self::SUCCESS;
         }
 
         $trialEnd = $user->trial_ends_at;
-        $now = Carbon::now();
-        
+        $now      = Carbon::now();
+
         $this->line("Trial ends: {$trialEnd->format('Y-m-d H:i:s')}");
-        
+
         if ($trialEnd->year > 2090) {
-            $this->success("Status: Unlimited trial");
+            $this->success('Status: Unlimited trial');
         } elseif ($trialEnd->isFuture()) {
             $daysLeft = $now->diffInDays($trialEnd);
             $this->success("Status: Active ({$daysLeft} days remaining)");
@@ -113,9 +113,9 @@ class ManageTrialCommand extends BaseCommand
     {
         if ($this->confirm("Are you sure you want to remove trial access for {$user->name}?")) {
             $user->update(['trial_ends_at' => null]);
-            $this->success("Trial access removed.");
+            $this->success('Trial access removed.');
         } else {
-            $this->warning("Operation cancelled.");
+            $this->warning('Operation cancelled.');
         }
 
         return self::SUCCESS;
@@ -127,8 +127,8 @@ class ManageTrialCommand extends BaseCommand
     private function setUnlimitedTrial(User $user): int
     {
         $user->update(['trial_ends_at' => Carbon::create(2037, 1, 1, 0, 0, 0)]);
-        $this->success("Unlimited trial access granted!");
-        
+        $this->success('Unlimited trial access granted!');
+
         return self::SUCCESS;
     }
 
@@ -138,14 +138,14 @@ class ManageTrialCommand extends BaseCommand
     private function extendTrial(User $user, int $days): int
     {
         $currentTrialEnd = $user->trial_ends_at;
-        $baseDate = $currentTrialEnd && $currentTrialEnd->isFuture() ? $currentTrialEnd : Carbon::now();
-        
+        $baseDate        = $currentTrialEnd && $currentTrialEnd->isFuture() ? $currentTrialEnd : Carbon::now();
+
         $newTrialEnd = $baseDate->addDays($days);
         $user->update(['trial_ends_at' => $newTrialEnd]);
-        
+
         $this->success("Trial extended by {$days} days.");
         $this->line("New trial end date: {$newTrialEnd->format('Y-m-d H:i:s')}");
-        
+
         return self::SUCCESS;
     }
 
@@ -157,13 +157,13 @@ class ManageTrialCommand extends BaseCommand
         try {
             $date = Carbon::createFromFormat('Y-m-d', $dateString)->endOfDay();
         } catch (\Exception $e) {
-            $this->failure("Invalid date format. Use Y-m-d format (e.g., 2024-12-31)");
+            $this->failure('Invalid date format. Use Y-m-d format (e.g., 2024-12-31)');
             return self::FAILURE;
         }
 
         $user->update(['trial_ends_at' => $date]);
         $this->success("Trial end date set to: {$date->format('Y-m-d H:i:s')}");
-        
+
         return self::SUCCESS;
     }
 
@@ -192,19 +192,19 @@ class ManageTrialCommand extends BaseCommand
             case 'Extend trial by days':
                 $days = $this->ask('How many days to extend?', '30');
                 return $this->extendTrial($user, (int) $days);
-                
+
             case 'Set specific end date':
                 $date = $this->ask('Enter end date (Y-m-d format):');
                 return $this->setTrialEndDate($user, $date);
-                
+
             case 'Make unlimited trial':
                 return $this->setUnlimitedTrial($user);
-                
+
             case 'Remove trial access':
                 return $this->removeTrial($user);
-                
+
             default:
-                $this->warning("Operation cancelled.");
+                $this->warning('Operation cancelled.');
                 return self::SUCCESS;
         }
     }

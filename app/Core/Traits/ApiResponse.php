@@ -17,23 +17,22 @@ trait ApiResponse
     protected function success(mixed $data = null, string $message = 'Operation successful', int $code = 200): JsonResponse
     {
         // Handle Laravel Resources and Collections properly
-        if ($data instanceof \Illuminate\Http\Resources\Json\JsonResource ||
-            $data instanceof \Illuminate\Http\Resources\Json\ResourceCollection) {
+        if ($data instanceof \Illuminate\Http\Resources\Json\JsonResource || $data instanceof \Illuminate\Http\Resources\Json\ResourceCollection) {
             // Resources already wrap correctly when used with response()->json()
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => $message,
-                'data' => $data,
+                'data'    => $data,
             ], $code);
         }
-        
+
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => $message,
-            'data' => $data,
+            'data'    => $data,
         ], $code);
     }
-    
+
     /**
      * Return an error JSON response.
      *
@@ -45,9 +44,9 @@ trait ApiResponse
     protected function error(string $message = 'Error occurred', int $code = 400, mixed $data = null): JsonResponse
     {
         return response()->json([
-            'status' => 'error',
+            'status'  => 'error',
             'message' => $message,
-            'data' => $data,
+            'data'    => $data,
         ], $code);
     }
 }

@@ -22,11 +22,11 @@ Route::middleware(['api-key', 'auth:sanctum'])->prefix('subscription')->name('su
     // Existing subscription routes
     Route::get('/', [SubscriptionController::class, 'show'])->name('show');
     Route::post('start-trial', [SubscriptionController::class, 'startTrial'])->name('start-trial')->middleware('permission:start trial');
-    
+
     // New Stripe Checkout and Billing Portal routes
     Route::post('checkout', [SubscriptionController::class, 'checkout'])->name('checkout');
     Route::post('billing-portal', [SubscriptionController::class, 'billingPortal'])->name('billing-portal');
-    
+
     // Currency and plan information routes
     Route::get('currencies', [SubscriptionController::class, 'currencies'])->name('currencies');
     Route::get('plans', [SubscriptionController::class, 'plans'])->name('plans');

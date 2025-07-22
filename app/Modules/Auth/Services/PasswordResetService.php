@@ -17,14 +17,14 @@ class PasswordResetService
     {
         try {
             $status = Password::sendResetLink($credentials);
-            
+
             // Log activity
             if ($status === Password::RESET_LINK_SENT) {
                 activity()
                     ->withProperties(['email' => $credentials['email']])
                     ->log('requested password reset');
             }
-            
+
             return $status;
         } catch (\Exception $e) {
             Log::error('Failed to send password reset link: ' . $e->getMessage(), [
@@ -34,7 +34,7 @@ class PasswordResetService
             throw $e;
         }
     }
-    
+
     /**
      * Reset the user's password
      */
@@ -45,7 +45,7 @@ class PasswordResetService
             if (!isset($credentials['password_confirmation']) && isset($credentials['password'])) {
                 $credentials['password_confirmation'] = $credentials['password'];
             }
-            
+
             $status = Password::reset(
                 $credentials,
                 function ($user, $password) {
@@ -56,12 +56,12 @@ class PasswordResetService
                     $user->save();
 
                     event(new PasswordReset($user));
-                    
+
                     // Log activity
                     activity()->causedBy($user)->log('reset password');
                 }
             );
-            
+
             return $status;
         } catch (\Exception $e) {
             Log::error('Failed to reset password: ' . $e->getMessage(), [

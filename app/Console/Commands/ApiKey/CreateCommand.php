@@ -41,9 +41,9 @@ class CreateCommand extends BaseCommand
     {
         try {
             $keyData = $this->gatherKeyData();
-            $result = $this->createApiKey($keyData);
+            $result  = $this->createApiKey($keyData);
             $this->displaySuccess($result);
-            
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error("Failed to create API key: {$e->getMessage()}");
@@ -56,7 +56,7 @@ class CreateCommand extends BaseCommand
      */
     private function gatherKeyData(): array
     {
-        $name = $this->option('name') ?: $this->ask('Name for the API key');
+        $name    = $this->option('name') ?: $this->ask('Name for the API key');
         $service = $this->option('service') ?: $this->anticipate(
             'Service the API key is for',
             ['web-frontend', 'mobile-app', 'admin-dashboard', 'third-party-integration']
@@ -67,13 +67,13 @@ class CreateCommand extends BaseCommand
             0
         );
         $description = $this->option('description') ?: $this->ask('Description (optional)', null);
-        
+
         return [
-            'name' => $name,
-            'service' => $service,
+            'name'        => $name,
+            'service'     => $service,
             'environment' => $environment,
             'description' => $description,
-            'expires_at' => $this->determineExpiration()
+            'expires_at'  => $this->determineExpiration()
         ];
     }
 
@@ -83,7 +83,7 @@ class CreateCommand extends BaseCommand
     private function determineExpiration(): ?\Carbon\Carbon
     {
         $expires = $this->option('expires');
-        
+
         if ($expires === null) {
             $shouldExpire = $this->confirm('Should the API key expire?', false);
             if ($shouldExpire) {
@@ -92,7 +92,7 @@ class CreateCommand extends BaseCommand
             }
             return null;
         }
-        
+
         return (int)$expires > 0 ? now()->addDays((int)$expires) : null;
     }
 
@@ -120,7 +120,7 @@ class CreateCommand extends BaseCommand
         $this->newLine();
         $this->line('<fg=yellow>' . $result['plain_text_key'] . '</>');
         $this->newLine();
-        
+
         $this->table(['Property', 'Value'], [
             ['UUID', $result['api_key']->uuid],
             ['Name', $result['api_key']->name],

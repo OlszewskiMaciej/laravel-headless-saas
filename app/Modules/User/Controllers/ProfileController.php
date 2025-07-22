@@ -17,7 +17,8 @@ class ProfileController extends BaseController
 
     public function __construct(
         private readonly ProfileService $profileService
-    ) {}
+    ) {
+    }
 
     /**
      * Get authenticated user profile
@@ -29,35 +30,35 @@ class ProfileController extends BaseController
         } catch (\Exception $e) {
             Log::error('Failed to get user profile: ' . $e->getMessage(), [
                 'user_uuid' => $request->user()?->uuid,
-                'trace' => $e->getTraceAsString()
+                'trace'     => $e->getTraceAsString()
             ]);
-            
+
             return $this->error('Failed to retrieve profile', 500);
         }
     }
-    
+
     /**
      * Update authenticated user profile
      */
     public function update(UpdateProfileRequest $request): JsonResponse
     {
         try {
-            $user = $request->user();
+            $user      = $request->user();
             $validated = $request->validated();
 
             $updatedUser = $this->profileService->updateProfile($user, $validated);
-            
+
             return $this->success(
-                new UserResource($updatedUser), 
+                new UserResource($updatedUser),
                 'Profile updated successfully'
             );
         } catch (\Exception $e) {
             Log::error('Failed to update user profile: ' . $e->getMessage(), [
                 'user_uuid' => $request->user()?->uuid,
-                'data' => $request->validated(),
-                'trace' => $e->getTraceAsString()
+                'data'      => $request->validated(),
+                'trace'     => $e->getTraceAsString()
             ]);
-            
+
             return $this->error('Failed to update profile', 500);
         }
     }

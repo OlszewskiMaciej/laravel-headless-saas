@@ -68,12 +68,12 @@ abstract class BaseCommand extends Command
     {
         $this->newLine();
         $this->info('Summary:');
-        
+
         $rows = [];
         foreach ($data as $key => $value) {
             $rows[] = [ucfirst(str_replace('_', ' ', $key)), $value];
         }
-        
+
         $this->table(['Metric', 'Value'], $rows);
     }
 
@@ -86,12 +86,12 @@ abstract class BaseCommand extends Command
             return $callback() ?? self::SUCCESS;
         } catch (\Exception $e) {
             $this->failure("Command failed: {$e->getMessage()}");
-            
+
             if ($this->output->isVerbose()) {
                 $this->line('<fg=red>Stack trace:</>');
                 $this->line($e->getTraceAsString());
             }
-            
+
             return self::FAILURE;
         }
     }
@@ -103,7 +103,7 @@ abstract class BaseCommand extends Command
     {
         $progress = $this->output->createProgressBar($total);
         $progress->start();
-        
+
         try {
             $callback($progress);
         } finally {

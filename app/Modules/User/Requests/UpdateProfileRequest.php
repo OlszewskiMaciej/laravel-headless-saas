@@ -24,22 +24,22 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         $user = $this->user();
-        
+
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name'  => ['sometimes', 'required', 'string', 'max:255'],
             'email' => [
                 'sometimes',
-                'required', 
-                'string', 
-                'email', 
+                'required',
+                'string',
+                'email',
                 'max:255',
                 Rule::unique('users')->ignore($user->uuid),
             ],
             'password' => [
-                'sometimes', 
-                'required', 
-                'string', 
-                Password::defaults(), 
+                'sometimes',
+                'required',
+                'string',
+                Password::defaults(),
                 'confirmed'
             ],
             'current_password' => ['required_with:password', 'current_password'],

@@ -15,17 +15,17 @@ class ResponseServiceProvider extends ServiceProvider
         // Configure standard API responses
         Response::macro('success', function ($data = null, string $message = 'Success', int $statusCode = 200) {
             return Response::json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => $message,
-                'data' => $data,
+                'data'    => $data,
             ], $statusCode);
         });
 
         Response::macro('error', function (string $message = 'Error', int $statusCode = 400, $errors = null) {
             return Response::json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => $message,
-                'errors' => $errors,
+                'errors'  => $errors,
             ], $statusCode);
         });
     }

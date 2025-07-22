@@ -32,7 +32,7 @@ class ListCommand extends BaseCommand
     public function handle(): int
     {
         $keys = $this->getFilteredApiKeys();
-        
+
         if ($keys->isEmpty()) {
             $this->info('No API keys found matching the criteria.');
             return self::SUCCESS;
@@ -48,23 +48,23 @@ class ListCommand extends BaseCommand
     private function getFilteredApiKeys()
     {
         $query = ApiKey::query();
-        
+
         if ($service = $this->option('service')) {
             $query->where('service', $service);
         }
-        
+
         if ($environment = $this->option('environment')) {
             $query->where('environment', $environment);
         }
-        
+
         if (!$this->option('show-inactive')) {
             $query->where('is_active', true);
         }
-        
+
         if ($this->option('show-deleted')) {
             $query->withTrashed();
         }
-        
+
         return $query->orderBy('created_at', 'desc')->get();
     }
 
@@ -74,9 +74,9 @@ class ListCommand extends BaseCommand
     private function displayKeys($keys): void
     {
         $format = $this->option('format');
-        
+
         match ($format) {
-            'json' => $this->displayAsJson($keys),
+            'json'  => $this->displayAsJson($keys),
             default => $this->displayAsTable($keys)
         };
     }
@@ -98,7 +98,7 @@ class ListCommand extends BaseCommand
                 $key->last_used_at ? $key->last_used_at->diffForHumans() : 'Never',
             ];
         })->toArray();
-        
+
         $this->table(
             ['UUID', 'Name', 'Service', 'Environment', 'Active', 'Deleted', 'Expires', 'Last Used'],
             $data

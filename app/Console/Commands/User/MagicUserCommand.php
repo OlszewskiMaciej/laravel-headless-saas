@@ -32,13 +32,13 @@ class MagicUserCommand extends BaseCommand
      * Available magic actions
      */
     private array $actions = [
-        'verify-email' => 'Mark user email as verified',
-        'unverify-email' => 'Mark user email as unverified',
-        'login-token' => 'Generate a temporary login token',
-        'clear-sessions' => 'Clear all user sessions',
+        'verify-email'    => 'Mark user email as verified',
+        'unverify-email'  => 'Mark user email as unverified',
+        'login-token'     => 'Generate a temporary login token',
+        'clear-sessions'  => 'Clear all user sessions',
         'emergency-admin' => 'Create emergency admin user',
-        'user-info' => 'Show comprehensive user information',
-        'bulk-operation' => 'Perform bulk operations on users',
+        'user-info'       => 'Show comprehensive user information',
+        'bulk-operation'  => 'Perform bulk operations on users',
     ];
 
     /**
@@ -47,7 +47,7 @@ class MagicUserCommand extends BaseCommand
     public function handle(): int
     {
         $action = $this->argument('action');
-        
+
         if (!array_key_exists($action, $this->actions)) {
             $this->failure("Invalid action: {$action}");
             $this->line('Available actions:');
@@ -92,10 +92,12 @@ class MagicUserCommand extends BaseCommand
     private function verifyEmail(): int
     {
         $user = $this->findUser();
-        if (!$user) return self::FAILURE;
+        if (!$user) {
+            return self::FAILURE;
+        }
 
         if ($user->email_verified_at) {
-            $this->warning("User email is already verified.");
+            $this->warning('User email is already verified.');
             return self::SUCCESS;
         }
 
@@ -111,10 +113,12 @@ class MagicUserCommand extends BaseCommand
     private function unverifyEmail(): int
     {
         $user = $this->findUser();
-        if (!$user) return self::FAILURE;
+        if (!$user) {
+            return self::FAILURE;
+        }
 
         if (!$user->email_verified_at) {
-            $this->warning("User email is already unverified.");
+            $this->warning('User email is already unverified.');
             return self::SUCCESS;
         }
 
@@ -130,13 +134,15 @@ class MagicUserCommand extends BaseCommand
     private function generateLoginToken(): int
     {
         $user = $this->findUser();
-        if (!$user) return self::FAILURE;
+        if (!$user) {
+            return self::FAILURE;
+        }
 
         $token = $user->createToken('magic-login', ['*'], now()->addHours(1));
-        
+
         $this->success("Login token generated for {$user->name}");
         $this->line("Token: {$token->plainTextToken}");
-        $this->warning("This token expires in 1 hour!");
+        $this->warning('This token expires in 1 hour!');
 
         return self::SUCCESS;
     }
@@ -147,7 +153,9 @@ class MagicUserCommand extends BaseCommand
     private function clearSessions(): int
     {
         $user = $this->findUser();
-        if (!$user) return self::FAILURE;
+        if (!$user) {
+            return self::FAILURE;
+        }
 
         $user->tokens()->delete();
         $this->success("All sessions cleared for {$user->name}");
@@ -160,28 +168,28 @@ class MagicUserCommand extends BaseCommand
      */
     private function createEmergencyAdmin(): int
     {
-        $email = 'emergency@admin.local';
+        $email    = 'emergency@admin.local';
         $password = $this->generateTempPassword();
 
         if (User::where('email', $email)->exists()) {
-            $this->failure("Emergency admin user already exists!");
+            $this->failure('Emergency admin user already exists!');
             return self::FAILURE;
         }
 
         $user = User::create([
-            'name' => 'Emergency Admin',
-            'email' => $email,
-            'password' => Hash::make($password),
+            'name'              => 'Emergency Admin',
+            'email'             => $email,
+            'password'          => Hash::make($password),
             'email_verified_at' => now(),
-            'trial_ends_at' => Carbon::create(2037, 1, 1, 0, 0, 0),
+            'trial_ends_at'     => Carbon::create(2037, 1, 1, 0, 0, 0),
         ]);
 
         $user->assignRole('admin');
 
-        $this->success("Emergency admin user created!");
+        $this->success('Emergency admin user created!');
         $this->line("Email: {$email}");
         $this->line("Password: {$password}");
-        $this->warning("Delete this user after resolving your emergency!");
+        $this->warning('Delete this user after resolving your emergency!');
 
         return self::SUCCESS;
     }
@@ -192,24 +200,26 @@ class MagicUserCommand extends BaseCommand
     private function showUserInfo(): int
     {
         $user = $this->findUser();
-        if (!$user) return self::FAILURE;
+        if (!$user) {
+            return self::FAILURE;
+        }
 
-        $this->line("=== User Information ===");
+        $this->line('=== User Information ===');
         $this->line("UUID: {$user->uuid}");
         $this->line("Name: {$user->name}");
         $this->line("Email: {$user->email}");
         $this->line("Created: {$user->created_at}");
         $this->line("Updated: {$user->updated_at}");
-        $this->line("Email Verified: " . ($user->email_verified_at ? 'Yes' : 'No'));
-        $this->line("Trial Ends: " . ($user->trial_ends_at ? $user->trial_ends_at : 'No trial'));
-        
+        $this->line('Email Verified: ' . ($user->email_verified_at ? 'Yes' : 'No'));
+        $this->line('Trial Ends: ' . ($user->trial_ends_at ? $user->trial_ends_at : 'No trial'));
+
         $roles = $user->roles->pluck('name')->toArray();
-        $this->line("Roles: " . (empty($roles) ? 'None' : implode(', ', $roles)));
-        
-        $this->line("Active Tokens: " . $user->tokens()->count());
-        
+        $this->line('Roles: ' . (empty($roles) ? 'None' : implode(', ', $roles)));
+
+        $this->line('Active Tokens: ' . $user->tokens()->count());
+
         if ($user->subscriptions) {
-            $this->line("Subscriptions: " . $user->subscriptions()->count());
+            $this->line('Subscriptions: ' . $user->subscriptions()->count());
         }
 
         return self::SUCCESS;
@@ -244,7 +254,7 @@ class MagicUserCommand extends BaseCommand
             case 'List users by role':
                 return $this->listUsersByRole();
             default:
-                $this->warning("Operation cancelled.");
+                $this->warning('Operation cancelled.');
                 return self::SUCCESS;
         }
     }
@@ -255,9 +265,9 @@ class MagicUserCommand extends BaseCommand
     private function bulkVerifyEmails(): int
     {
         $count = User::whereNull('email_verified_at')->count();
-        
+
         if ($count === 0) {
-            $this->success("All users already have verified emails.");
+            $this->success('All users already have verified emails.');
             return self::SUCCESS;
         }
 
@@ -274,12 +284,12 @@ class MagicUserCommand extends BaseCommand
      */
     private function bulkExtendTrials(): int
     {
-        $days = $this->ask('How many days to extend trials?', '30');
-        $days = (int) $days; // Convert to integer
+        $days  = $this->ask('How many days to extend trials?', '30');
+        $days  = (int) $days; // Convert to integer
         $count = User::whereNotNull('trial_ends_at')->count();
 
         if ($count === 0) {
-            $this->warning("No users have trials to extend.");
+            $this->warning('No users have trials to extend.');
             return self::SUCCESS;
         }
 
@@ -297,7 +307,7 @@ class MagicUserCommand extends BaseCommand
      */
     private function bulkAssignRole(): int
     {
-        $roleName = $this->ask('Which role to assign to all users?');
+        $roleName  = $this->ask('Which role to assign to all users?');
         $userCount = User::count();
 
         if ($this->confirm("Assign role '{$roleName}' to all {$userCount} users?")) {
@@ -315,9 +325,9 @@ class MagicUserCommand extends BaseCommand
      */
     private function bulkClearSessions(): int
     {
-        if ($this->confirm("Clear all user sessions? This will log out all users.")) {
+        if ($this->confirm('Clear all user sessions? This will log out all users.')) {
             DB::table('personal_access_tokens')->delete();
-            $this->success("All user sessions cleared.");
+            $this->success('All user sessions cleared.');
         }
 
         return self::SUCCESS;
@@ -329,7 +339,7 @@ class MagicUserCommand extends BaseCommand
     private function listUsersByRole(): int
     {
         $roleName = $this->ask('Which role to filter by?');
-        $users = User::role($roleName)->get();
+        $users    = User::role($roleName)->get();
 
         if ($users->isEmpty()) {
             $this->warning("No users found with role '{$roleName}'.");
@@ -349,7 +359,7 @@ class MagicUserCommand extends BaseCommand
     private function findUser(): ?User
     {
         $userIdentifier = $this->argument('user');
-        
+
         if (!$userIdentifier) {
             $userIdentifier = $this->ask('Enter user email or UUID:');
         }

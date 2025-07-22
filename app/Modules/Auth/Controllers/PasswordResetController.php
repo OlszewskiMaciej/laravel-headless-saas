@@ -14,14 +14,15 @@ use Illuminate\Routing\Controller;
 class PasswordResetController extends Controller
 {
     use ApiResponse;
-    
+
     public function __construct(
         private readonly PasswordResetService $passwordResetService
-    ) {}
-    
+    ) {
+    }
+
     /**
      * Send a reset link to the given user
-     * 
+     *
      * @OA\Post(
      *     path="/auth/forgot-password",
      *     tags={"Auth"},
@@ -51,7 +52,7 @@ class PasswordResetController extends Controller
             $status = $this->passwordResetService->sendResetLink(
                 $request->only('email')
             );
-            
+
             // Always return a success response to prevent email enumeration
             if ($status === Password::RESET_LINK_SENT) {
                 return $this->success(null, 'If your email exists in our system, you will receive a password reset link shortly.');
@@ -65,15 +66,15 @@ class PasswordResetController extends Controller
                 'email' => $request->email,
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // Don't expose error details to client
             return $this->success(null, 'If your email exists in our system, you will receive a password reset link shortly.');
         }
     }
-    
+
     /**
      * Reset the user's password
-     * 
+     *
      * @OA\Post(
      *     path="/auth/reset-password",
      *     tags={"Auth"},
@@ -105,7 +106,7 @@ class PasswordResetController extends Controller
             $status = $this->passwordResetService->resetPassword(
                 $request->only('email', 'password', 'password_confirmation', 'token')
             );
-            
+
             if ($status === Password::PASSWORD_RESET) {
                 return $this->success(null, __($status));
             } else {
@@ -118,21 +119,21 @@ class PasswordResetController extends Controller
                 'email' => $request->email,
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return $this->error('Unable to reset password. Please try again with a new reset link.', 500);
         }
     }
-    
+
     /**
      * Map password reset error status to user-friendly messages
      */
     private function mapPasswordResetError(string $status): string
     {
         return match($status) {
-            Password::INVALID_TOKEN => 'Invalid or expired password reset token. Please request a new link.',
-            Password::INVALID_USER => 'We cannot find a user with that email address.',
+            Password::INVALID_TOKEN   => 'Invalid or expired password reset token. Please request a new link.',
+            Password::INVALID_USER    => 'We cannot find a user with that email address.',
             Password::RESET_THROTTLED => 'Please wait before retrying. Too many password reset attempts.',
-            default => 'Unable to reset password. Please try again.'
+            default                   => 'Unable to reset password. Please try again.'
         };
     }
 }

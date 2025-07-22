@@ -3,7 +3,6 @@
 namespace App\Console\Commands\Subscription;
 
 use Illuminate\Support\Facades\Schema;
-
 use App\Console\Commands\BaseCommand;
 use Illuminate\Support\Facades\Cache;
 
@@ -29,10 +28,10 @@ class ClearPricesCacheCommand extends BaseCommand
      * Cache patterns to clear
      */
     private const CACHE_PATTERNS = [
-        'stripe_prices' => 'stripe_prices_*',
+        'stripe_prices'      => 'stripe_prices_*',
         'subscription_plans' => 'subscription_plans_*',
-        'product_features' => 'product_features_*',
-        'pricing_tiers' => 'pricing_tiers_*',
+        'product_features'   => 'product_features_*',
+        'pricing_tiers'      => 'pricing_tiers_*',
     ];
 
     /**
@@ -41,15 +40,15 @@ class ClearPricesCacheCommand extends BaseCommand
     public function handle(): int
     {
         $this->info('Clearing subscription cache...');
-        
+
         if ($this->option('all')) {
             return $this->clearAllCache();
         }
-        
+
         if ($pattern = $this->option('pattern')) {
             return $this->clearCacheByPattern($pattern);
         }
-        
+
         return $this->clearPricesCache();
     }
 
@@ -59,13 +58,13 @@ class ClearPricesCacheCommand extends BaseCommand
     private function clearAllCache(): int
     {
         $clearedCount = 0;
-        
+
         foreach (self::CACHE_PATTERNS as $name => $pattern) {
             $count = $this->clearCachePattern($pattern);
             $this->line("  ✓ Cleared {$count} {$name} cache entries");
             $clearedCount += $count;
         }
-        
+
         $this->info("Successfully cleared {$clearedCount} total cache entries.");
         return self::SUCCESS;
     }
@@ -91,7 +90,7 @@ class ClearPricesCacheCommand extends BaseCommand
             'stripe_prices_by_product',
             'subscription_pricing_config'
         ];
-        
+
         $clearedCount = 0;
 
         // Avoid cache usage if cache table does not exist (e.g. during install)
@@ -126,28 +125,28 @@ class ClearPricesCacheCommand extends BaseCommand
     private function clearCachePattern(string $pattern): int
     {
         $store = Cache::getStore();
-        
+
         // For Redis/Memcached stores that support pattern deletion
         if (method_exists($store, 'flush') && str_contains($pattern, '*')) {
             try {
                 // This is a simplified approach - in production you might want
                 // to use more sophisticated pattern matching
-                $keys = $this->getCacheKeys($pattern);
+                $keys  = $this->getCacheKeys($pattern);
                 $count = 0;
-                
+
                 foreach ($keys as $key) {
                     if (Cache::forget($key)) {
                         $count++;
                     }
                 }
-                
+
                 return $count;
             } catch (\Exception $e) {
                 $this->warn("Could not clear pattern cache: {$e->getMessage()}");
                 return 0;
             }
         }
-        
+
         // Fallback: just try to forget the pattern as a literal key
         return Cache::forget($pattern) ? 1 : 0;
     }
@@ -160,8 +159,8 @@ class ClearPricesCacheCommand extends BaseCommand
         // This is a simplified implementation
         // In a real application, you'd implement proper pattern matching
         // based on your cache driver (Redis, Memcached, etc.)
-        
-        $basePattern = str_replace('*', '', $pattern);
+
+        $basePattern  = str_replace('*', '', $pattern);
         $possibleKeys = [
             $basePattern,
             $basePattern . 'usd',
@@ -171,7 +170,7 @@ class ClearPricesCacheCommand extends BaseCommand
             $basePattern . 'active',
             $basePattern . 'inactive',
         ];
-        
-        return array_filter($possibleKeys, fn($key) => Cache::has($key));
+
+        return array_filter($possibleKeys, fn ($key) => Cache::has($key));
     }
 }

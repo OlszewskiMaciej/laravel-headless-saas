@@ -44,7 +44,7 @@ class RevokeCommand extends BaseCommand
                 return $this->revokeAllInactive();
             }
 
-            $uuid = $this->getApiKeyUuid();
+            $uuid   = $this->getApiKeyUuid();
             $apiKey = $this->findApiKey($uuid);
 
             if (!$apiKey) {
@@ -52,7 +52,7 @@ class RevokeCommand extends BaseCommand
             }
 
             $this->displayApiKeyDetails($apiKey);
-            
+
             if (!$this->confirmRevocation($apiKey)) {
                 $this->info('Operation cancelled.');
                 return self::SUCCESS;
@@ -60,7 +60,7 @@ class RevokeCommand extends BaseCommand
 
             $this->processRevocation($apiKey);
             return self::SUCCESS;
-            
+
         } catch (\Exception $e) {
             $this->error("Error: {$e->getMessage()}");
             return self::FAILURE;
@@ -89,11 +89,11 @@ class RevokeCommand extends BaseCommand
     private function findApiKey(string $uuid): ?ApiKey
     {
         $apiKey = ApiKey::find($uuid);
-        
+
         if (!$apiKey) {
             $this->error("API key with UUID {$uuid} not found.");
         }
-        
+
         return $apiKey;
     }
 
@@ -124,9 +124,9 @@ class RevokeCommand extends BaseCommand
             return true;
         }
 
-        $force = $this->option('force');
+        $force  = $this->option('force');
         $action = $force ? 'permanently delete' : 'revoke';
-        
+
         return $this->confirm("Are you sure you want to {$action} this API key?", false);
     }
 
@@ -136,7 +136,7 @@ class RevokeCommand extends BaseCommand
     private function processRevocation(ApiKey $apiKey): void
     {
         $force = $this->option('force');
-        
+
         if ($force) {
             $this->apiKeyService->deleteKey($apiKey);
             $this->info('API key permanently deleted.');
@@ -152,14 +152,14 @@ class RevokeCommand extends BaseCommand
     private function revokeAllInactive(): int
     {
         $inactiveKeys = ApiKey::where('is_active', false)->get();
-        
+
         if ($inactiveKeys->isEmpty()) {
             $this->info('No inactive API keys found.');
             return self::SUCCESS;
         }
 
         $this->info("Found {$inactiveKeys->count()} inactive API key(s).");
-        
+
         if (!$this->option('confirm') && !$this->confirm('Proceed with revocation?', false)) {
             $this->info('Operation cancelled.');
             return self::SUCCESS;

@@ -23,7 +23,7 @@ class UserRepository implements UserRepositoryInterface
 
         return $query->paginate($perPage);
     }
-    
+
     /**
      * Get all users
      */
@@ -31,7 +31,7 @@ class UserRepository implements UserRepositoryInterface
     {
         return User::with($with)->get();
     }
-    
+
     /**
      * Find a user by ID
      */
@@ -39,7 +39,7 @@ class UserRepository implements UserRepositoryInterface
     {
         return User::with($with)->find($id);
     }
-    
+
     /**
      * Find a user by email
      */
@@ -47,7 +47,7 @@ class UserRepository implements UserRepositoryInterface
     {
         return User::with($with)->where('email', $email)->first();
     }
-    
+
     /**
      * Create a new user with transaction
      */
@@ -57,7 +57,7 @@ class UserRepository implements UserRepositoryInterface
             return User::create($data);
         });
     }
-    
+
     /**
      * Update a user with transaction
      */
@@ -67,7 +67,7 @@ class UserRepository implements UserRepositoryInterface
             return $user->update($data);
         });
     }
-    
+
     /**
      * Delete a user with transaction
      */
@@ -77,7 +77,7 @@ class UserRepository implements UserRepositoryInterface
             return $user->delete();
         });
     }
-    
+
     /**
      * Sync user roles
      */
